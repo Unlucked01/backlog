@@ -9,7 +9,7 @@ services:
       # Database
       - POSTGRES_USER=backlog_user
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-backlog_super_secure_password_2024}
-      - POSTGRES_HOST=host.docker.internal
+      - POSTGRES_HOST=172.17.0.1
       - POSTGRES_PORT=5432
       - POSTGRES_DB=student_planner
       
@@ -43,8 +43,6 @@ services:
       - ./backend/uploads:/app/uploads
     ports:
       - "8010:8000"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     networks:
       - backlog_network
     restart: unless-stopped
