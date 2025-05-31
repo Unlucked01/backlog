@@ -4,7 +4,15 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/student_planner"
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "password"
+    POSTGRES_HOST: str = "localhost"
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: str = "student_planner"
+    
+    @property
+    def DATABASE_URL(self) -> str:
+        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
     
     # JWT
     SECRET_KEY: str = "your-secret-key-change-in-production"
