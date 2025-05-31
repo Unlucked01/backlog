@@ -5,11 +5,12 @@ services:
   backend:
     build: ./backend
     container_name: backlog_backend
+    network_mode: host
     environment:
       # Database
       - POSTGRES_USER=backlog_user
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-backlog_super_secure_password_2024}
-      - POSTGRES_HOST=172.17.0.1
+      - POSTGRES_HOST=localhost
       - POSTGRES_PORT=5433
       - POSTGRES_DB=student_planner
       
@@ -43,8 +44,6 @@ services:
       - ./backend/uploads:/app/uploads
     ports:
       - "8010:8000"
-    networks:
-      - backlog_network
     restart: unless-stopped
 
   # Frontend
