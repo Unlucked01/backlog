@@ -26,7 +26,9 @@ from app.core.config import settings
 target_metadata = Base.metadata
 
 # Set the sqlalchemy.url from settings
-config.set_main_option("sqlalchemy.url", settings.get_database_url())
+database_url = settings.get_database_url()
+print(f"🔍 Alembic using database URL: {database_url}")
+config.set_main_option("sqlalchemy.url", database_url)
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
