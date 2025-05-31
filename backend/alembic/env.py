@@ -21,13 +21,12 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 from app.db.base import Base
 from app.db.models import *  # noqa
+from app.core.config import settings
 
 target_metadata = Base.metadata
 
-# Set the sqlalchemy.url from environment variable
-database_url = os.environ.get("DATABASE_URL")
-if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+# Set the sqlalchemy.url from settings
+config.set_main_option("sqlalchemy.url", settings.get_database_url())
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
