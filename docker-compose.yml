@@ -1,6 +1,29 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: backlog_postgres
+    environment:
+      - POSTGRES_USER=backlog_user
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-backlog_super_secure_password_2024}
+      - POSTGRES_DB=student_planner
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+    networks:
+      - backlog_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U backlog_user -d student_planner"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Backend API
   backend:
     build: ./backend
@@ -9,8 +32,8 @@ services:
       # Database
       - POSTGRES_USER=backlog_user
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-backlog_super_secure_password_2024}
-      - POSTGRES_HOST=localhost
-      - POSTGRES_PORT=5433
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
       - POSTGRES_DB=student_planner
       
       # JWT & Security
@@ -43,6 +66,11 @@ services:
       - ./backend/uploads:/app/uploads
     ports:
       - "8010:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backlog_network
     restart: unless-stopped
 
   # Frontend
@@ -65,6 +93,9 @@ services:
     networks:
       - backlog_network
     restart: unless-stopped
+
+volumes:
+  postgres_data:
 
 networks:
   backlog_network:

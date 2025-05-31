@@ -14,8 +14,8 @@ import os
 import psycopg2
 import time
 
-host = os.environ.get('POSTGRES_HOST', 'localhost')
-port = os.environ.get('POSTGRES_PORT', '5433')
+host = os.environ.get('POSTGRES_HOST', 'postgres')
+port = os.environ.get('POSTGRES_PORT', '5432')
 user = os.environ.get('POSTGRES_USER', 'backlog_user')
 password = os.environ.get('POSTGRES_PASSWORD', 'backlog_super_secure_password_2024')
 database = os.environ.get('POSTGRES_DB', 'student_planner')

@@ -5,9 +5,9 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     # Database - can be set via DATABASE_URL or individual components
     DATABASE_URL: Optional[str] = None
-    POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "password"
-    POSTGRES_HOST: str = "localhost"
+    POSTGRES_USER: str = "backlog_user"
+    POSTGRES_PASSWORD: str = "backlog_super_secure_password_2024"
+    POSTGRES_HOST: str = "postgres"
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = "student_planner"
     
