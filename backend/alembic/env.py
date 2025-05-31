@@ -21,13 +21,24 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 from app.db.base import Base
 from app.db.models import *  # noqa
-from app.core.config import get_settings
 
 target_metadata = Base.metadata
 
-# Set the sqlalchemy.url from settings - создаем свежий экземпляр
-settings = get_settings()
-database_url = settings.get_database_url()
+# Прямое чтение переменных окружения для Alembic
+user = os.getenv('POSTGRES_USER', 'backlog_user')
+password = os.getenv('POSTGRES_PASSWORD', 'backlog_super_secure_password_2024')
+host = os.getenv('POSTGRES_HOST', 'postgres')
+port = os.getenv('POSTGRES_PORT', '5432')
+database = os.getenv('POSTGRES_DB', 'student_planner')
+
+print(f"🔍 Alembic env values:")
+print(f"  POSTGRES_USER: {user}")
+print(f"  POSTGRES_PASSWORD: {password}")
+print(f"  POSTGRES_HOST: {host}")
+print(f"  POSTGRES_PORT: {port}")
+print(f"  POSTGRES_DB: {database}")
+
+database_url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
 print(f"🔍 Alembic using database URL: {database_url}")
 config.set_main_option("sqlalchemy.url", database_url)
 
