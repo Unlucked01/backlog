@@ -16,15 +16,22 @@ class Settings(BaseSettings):
         if self.DATABASE_URL:
             return self.DATABASE_URL
         
-        # Debug: показываем какие значения используются
-        print(f"🔍 Settings values:")
-        print(f"  POSTGRES_USER: {self.POSTGRES_USER}")
-        print(f"  POSTGRES_PASSWORD: {self.POSTGRES_PASSWORD}")
-        print(f"  POSTGRES_HOST: {self.POSTGRES_HOST}")
-        print(f"  POSTGRES_PORT: {self.POSTGRES_PORT}")
-        print(f"  POSTGRES_DB: {self.POSTGRES_DB}")
+        # Принудительно читаем переменные окружения
+        user = os.getenv('POSTGRES_USER', self.POSTGRES_USER)
+        password = os.getenv('POSTGRES_PASSWORD', self.POSTGRES_PASSWORD)
+        host = os.getenv('POSTGRES_HOST', self.POSTGRES_HOST)
+        port = os.getenv('POSTGRES_PORT', str(self.POSTGRES_PORT))
+        database = os.getenv('POSTGRES_DB', self.POSTGRES_DB)
         
-        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        # Debug: показываем какие значения используются
+        print(f"🔍 Settings values (from env):")
+        print(f"  POSTGRES_USER: {user}")
+        print(f"  POSTGRES_PASSWORD: {password}")
+        print(f"  POSTGRES_HOST: {host}")
+        print(f"  POSTGRES_PORT: {port}")
+        print(f"  POSTGRES_DB: {database}")
+        
+        return f"postgresql://{user}:{password}@{host}:{port}/{database}"
     
     # JWT
     SECRET_KEY: str = "your-secret-key-change-in-production"
@@ -67,7 +74,7 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
-        # Убеждаемся, что переменные окружения имеют приоритет
+        # Переменные окружения имеют приоритет над .env файлом
         env_file_encoding = 'utf-8'
 
 
