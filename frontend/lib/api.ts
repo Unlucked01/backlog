@@ -107,6 +107,22 @@ export interface UserStats {
   current_streak: number;
   total_points: number;
   achievements_count: number;
+  completed_goals: number;
+}
+
+export interface Goal {
+  id: number;
+  title: string;
+  description: string;
+  goal_type: 'semester' | 'monthly' | 'weekly' | 'custom';
+  target_value: number;
+  current_value: number;
+  start_date: string;
+  end_date: string;
+  is_completed: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 // API методы для авторизации
@@ -218,6 +234,38 @@ export const achievementsAPI = {
   async getUserStats(): Promise<UserStats> {
     const response = await api.get('/api/v1/achievements/stats');
     return response.data;
+  },
+};
+
+// API методы для целей
+export const goalsAPI = {
+  async getGoals(): Promise<Goal[]> {
+    const response = await api.get('/api/v1/goals/');
+    return response.data;
+  },
+
+  async getGoal(id: number): Promise<Goal> {
+    const response = await api.get(`/api/v1/goals/${id}`);
+    return response.data;
+  },
+
+  async createGoal(goal: Omit<Goal, 'id' | 'created_at' | 'updated_at' | 'current_value' | 'is_completed'>): Promise<Goal> {
+    const response = await api.post('/api/v1/goals/', goal);
+    return response.data;
+  },
+
+  async updateGoal(id: number, goal: Partial<Goal>): Promise<Goal> {
+    const response = await api.put(`/api/v1/goals/${id}`, goal);
+    return response.data;
+  },
+
+  async updateGoalProgress(id: number, increment: number = 1): Promise<Goal> {
+    const response = await api.post(`/api/v1/goals/${id}/progress`, { increment });
+    return response.data;
+  },
+
+  async deleteGoal(id: number): Promise<void> {
+    await api.delete(`/api/v1/goals/${id}`);
   },
 };
 

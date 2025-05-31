@@ -162,14 +162,25 @@ export default function ProfilePage() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-indigo-100 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            <Link href="/" className="mr-4 text-gray-600 hover:text-indigo-600 transition-colors">
-              <HomeIcon className="h-6 w-6" />
-            </Link>
-            <UserIcon className="h-6 w-6 text-indigo-600 mr-3" />
-            <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Профиль
-            </h1>
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <Link href="/" className="mr-4 text-gray-600 hover:text-indigo-600 transition-colors">
+                <HomeIcon className="h-6 w-6" />
+              </Link>
+              <UserIcon className="h-6 w-6 text-indigo-600 mr-3" />
+              <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                Профиль
+              </h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link 
+                href="/achievements" 
+                className="flex items-center text-gray-600 hover:text-yellow-600 transition-colors"
+              >
+                <TrophyIconSolid className="h-5 w-5 mr-1" />
+                <span className="hidden sm:inline">Достижения</span>
+              </Link>
+            </div>
           </div>
         </div>
       </header>

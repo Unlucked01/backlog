@@ -46,4 +46,5 @@ class UserStats(BaseModel):
     completion_rate: float
     current_streak: int
     total_points: int
-    achievements_count: int 
+    achievements_count: int
+    completed_goals: int 

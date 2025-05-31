@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, desc, func, distinct
-from ..db.models.goal import Achievement, UserAchievement
+from ..db.models.goal import Achievement, UserAchievement, Goal
 from ..db.models.task import Task, TaskStatus
 from ..db.models.user import User
 from datetime import datetime, timedelta
@@ -57,6 +57,11 @@ def get_user_stats(db: Session, user_id: int) -> Dict[str, Any]:
         and_(Task.user_id == user_id, Task.status == TaskStatus.overdue)
     ).count()
     
+    # Статистика целей
+    completed_goals = db.query(Goal).filter(
+        and_(Goal.user_id == user_id, Goal.is_completed == True)
+    ).count()
+    
     # Подсчет очков
     user_achievements = db.query(UserAchievement).filter(
         UserAchievement.user_id == user_id
@@ -89,7 +94,8 @@ def get_user_stats(db: Session, user_id: int) -> Dict[str, Any]:
         "completion_rate": round(completion_rate, 1),
         "current_streak": recent_completed,  # Упрощенная версия streak
         "total_points": total_points,
-        "achievements_count": len(user_achievements)
+        "achievements_count": len(user_achievements),
+        "completed_goals": completed_goals
     }
 
 
@@ -117,9 +123,8 @@ def check_and_award_achievements(db: Session, user_id: int) -> List[UserAchievem
             should_award = True
         elif achievement.condition_type == "streak_days" and stats["current_streak"] >= achievement.condition_value:
             should_award = True
-        elif achievement.condition_type == "goals_completed":
-            # Подсчитываем выполненные цели (добавим позже)
-            pass
+        elif achievement.condition_type == "goals_completed" and stats["completed_goals"] >= achievement.condition_value:
+            should_award = True
             
         if should_award:
             new_achievement = award_achievement(db, user_id, achievement.id)

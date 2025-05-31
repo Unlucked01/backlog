@@ -6,23 +6,30 @@ import Link from 'next/link';
 import { tokenUtils, authAPI, tasksAPI, type User, type Task, type TaskStats } from '@/lib/api';
 import { dateUtils, taskUtils } from '@/lib/utils';
 import { 
-  PlusIcon, 
-  CalendarIcon, 
-  ChartBarIcon, 
-  ListBulletIcon,
-  UserIcon,
-  ArrowRightOnRectangleIcon,
+  CalendarDaysIcon,
+  CalendarIcon,
   ClockIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
+  PlusIcon,
+  UserIcon,
+  Cog6ToothIcon,
+  ArrowRightIcon,
+  ArrowRightOnRectangleIcon,
+  ChartBarIcon,
+  FireIcon,
+  TrophyIcon,
+  StarIcon,
+  FlagIcon,
+  ListBulletIcon,
   AcademicCapIcon,
   BookOpenIcon,
   ComputerDesktopIcon,
-  DocumentTextIcon,
-  FireIcon,
-  TrophyIcon,
-  StarIcon
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
+import { 
+  TrophyIcon as TrophyIconSolid
+} from '@heroicons/react/24/solid';
 
 const getTaskTypeIcon = (type: string) => {
   const iconClass = "h-4 w-4";
