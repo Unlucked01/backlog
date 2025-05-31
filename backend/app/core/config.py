@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic_settings import BaseSettings
+import os
 
 
 class Settings(BaseSettings):
@@ -14,6 +15,15 @@ class Settings(BaseSettings):
     def get_database_url(self) -> str:
         if self.DATABASE_URL:
             return self.DATABASE_URL
+        
+        # Debug: показываем какие значения используются
+        print(f"🔍 Settings values:")
+        print(f"  POSTGRES_USER: {self.POSTGRES_USER}")
+        print(f"  POSTGRES_PASSWORD: {self.POSTGRES_PASSWORD}")
+        print(f"  POSTGRES_HOST: {self.POSTGRES_HOST}")
+        print(f"  POSTGRES_PORT: {self.POSTGRES_PORT}")
+        print(f"  POSTGRES_DB: {self.POSTGRES_DB}")
+        
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
     
     # JWT
@@ -57,6 +67,13 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
+        # Убеждаемся, что переменные окружения имеют приоритет
+        env_file_encoding = 'utf-8'
 
 
-settings = Settings() 
+# Создаем функцию для получения настроек, а не экземпляр
+def get_settings() -> Settings:
+    return Settings()
+
+# Для обратной совместимости создаем экземпляр
+settings = get_settings() 

@@ -21,11 +21,12 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 from app.db.base import Base
 from app.db.models import *  # noqa
-from app.core.config import settings
+from app.core.config import get_settings
 
 target_metadata = Base.metadata
 
-# Set the sqlalchemy.url from settings
+# Set the sqlalchemy.url from settings - создаем свежий экземпляр
+settings = get_settings()
 database_url = settings.get_database_url()
 print(f"🔍 Alembic using database URL: {database_url}")
 config.set_main_option("sqlalchemy.url", database_url)
