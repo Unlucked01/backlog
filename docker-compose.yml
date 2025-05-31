@@ -9,6 +9,7 @@ services:
       POSTGRES_DB: student_planner
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-backlog_super_secure_password_2024}
+      POSTGRES_HOST_AUTH_METHOD: md5
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
