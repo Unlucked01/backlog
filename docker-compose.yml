@@ -10,7 +10,7 @@ services:
       - POSTGRES_USER=backlog_user
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-backlog_super_secure_password_2024}
       - POSTGRES_HOST=172.17.0.1
-      - POSTGRES_PORT=5432
+      - POSTGRES_PORT=5433
       - POSTGRES_DB=student_planner
       
       # JWT & Security
