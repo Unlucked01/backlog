@@ -81,6 +81,34 @@ export interface PushSubscription {
   };
 }
 
+export interface Achievement {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  condition_type: string;
+  condition_value: number;
+  points: number;
+  created_at: string;
+}
+
+export interface UserAchievement {
+  id: number;
+  achievement: Achievement;
+  earned_at: string;
+}
+
+export interface UserStats {
+  total_tasks: number;
+  completed_tasks: number;
+  pending_tasks: number;
+  overdue_tasks: number;
+  completion_rate: number;
+  current_streak: number;
+  total_points: number;
+  achievements_count: number;
+}
+
 // API методы для авторизации
 export const authAPI = {
   async login(email: string, password: string): Promise<{ access_token: string; token_type: string }> {
@@ -172,6 +200,24 @@ export const tasksAPI = {
 
   async completeTaskStep(stepId: number, isCompleted: boolean): Promise<void> {
     await api.put(`/api/v1/tasks/steps/${stepId}/complete?is_completed=${isCompleted}`);
+  },
+};
+
+// API методы для достижений и статистики
+export const achievementsAPI = {
+  async getUserAchievements(): Promise<UserAchievement[]> {
+    const response = await api.get('/api/v1/achievements/user');
+    return response.data;
+  },
+
+  async getAllAchievements(): Promise<Achievement[]> {
+    const response = await api.get('/api/v1/achievements/');
+    return response.data;
+  },
+
+  async getUserStats(): Promise<UserStats> {
+    const response = await api.get('/api/v1/achievements/stats');
+    return response.data;
   },
 };
 
