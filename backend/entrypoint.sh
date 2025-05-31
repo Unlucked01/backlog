@@ -7,7 +7,35 @@ echo "🚀 Запуск студенческого планировщика..."
 # Функция для проверки доступности базы данных
 wait_for_db() {
     echo "⏳ Ожидание подключения к базе данных..."
-    while ! pg_isready -h localhost -p 5433 -U backlog_user; do
+    
+    # Используем Python для проверки подключения с теми же настройками, что и приложение
+    until python -c "
+import os
+import psycopg2
+import time
+
+host = os.environ.get('POSTGRES_HOST', 'localhost')
+port = os.environ.get('POSTGRES_PORT', '5433')
+user = os.environ.get('POSTGRES_USER', 'backlog_user')
+password = os.environ.get('POSTGRES_PASSWORD', 'backlog_super_secure_password_2024')
+database = os.environ.get('POSTGRES_DB', 'student_planner')
+
+try:
+    conn = psycopg2.connect(
+        host=host,
+        port=port,
+        user=user,
+        password=password,
+        database=database,
+        connect_timeout=5
+    )
+    conn.close()
+    print(f'✅ Успешно подключился к {host}:{port}')
+    exit(0)
+except Exception as e:
+    print(f'❌ Ошибка подключения к {host}:{port}: {e}')
+    exit(1)
+" 2>/dev/null; do
         echo "База данных недоступна, ожидание..."
         sleep 2
     done
