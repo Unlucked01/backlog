@@ -29,7 +29,8 @@ export default function GoogleCallbackPage() {
         localStorage.removeItem('oauth_state');
 
         // Обмениваем код на токен
-        const response = await fetch('http://localhost:8000/api/v1/auth/oauth/google/callback', {
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${apiBaseUrl}/api/v1/auth/oauth/google/callback`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

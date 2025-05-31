@@ -44,7 +44,8 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/auth/oauth/${provider}/url`);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiBaseUrl}/api/v1/auth/oauth/${provider}/url`);
       const data = await response.json();
       
       if (response.ok) {

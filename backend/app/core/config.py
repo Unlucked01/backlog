@@ -12,20 +12,8 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = "student_planner"
     
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        print(f"🔍 Settings __init__ called")
-        print(f"  DATABASE_URL: {self.DATABASE_URL}")
-        print(f"  POSTGRES_USER: {self.POSTGRES_USER}")
-        print(f"  POSTGRES_PASSWORD: {self.POSTGRES_PASSWORD}")
-        print(f"  POSTGRES_HOST: {self.POSTGRES_HOST}")
-        print(f"  POSTGRES_PORT: {self.POSTGRES_PORT}")
-        print(f"  POSTGRES_DB: {self.POSTGRES_DB}")
-    
     def get_database_url(self) -> str:
-        print(f"🔍 get_database_url() called")
         if self.DATABASE_URL:
-            print(f"🔍 Using DATABASE_URL: {self.DATABASE_URL}")
             return self.DATABASE_URL
         
         # Принудительно читаем переменные окружения
@@ -35,17 +23,7 @@ class Settings(BaseSettings):
         port = os.getenv('POSTGRES_PORT', str(self.POSTGRES_PORT))
         database = os.getenv('POSTGRES_DB', self.POSTGRES_DB)
         
-        # Debug: показываем какие значения используются
-        print(f"🔍 Settings values (from env):")
-        print(f"  POSTGRES_USER: {user}")
-        print(f"  POSTGRES_PASSWORD: {password}")
-        print(f"  POSTGRES_HOST: {host}")
-        print(f"  POSTGRES_PORT: {port}")
-        print(f"  POSTGRES_DB: {database}")
-        
-        url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
-        print(f"🔍 Generated URL: {url}")
-        return url
+        return f"postgresql://{user}:{password}@{host}:{port}/{database}"
     
     # JWT
     SECRET_KEY: str = "your-secret-key-change-in-production"
@@ -94,7 +72,6 @@ class Settings(BaseSettings):
 
 # Создаем функцию для получения настроек, а не экземпляр
 def get_settings() -> Settings:
-    print(f"🔍 get_settings() called")
     return Settings()
 
 # Для обратной совместимости создаем экземпляр
