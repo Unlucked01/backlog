@@ -1,32 +1,15 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15
-    container_name: backlog_postgres
-    environment:
-      POSTGRES_DB: student_planner
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-backlog_super_secure_password_2024}
-      POSTGRES_HOST_AUTH_METHOD: md5
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5434:5432"  # Changed to avoid conflicts with system postgres
-    networks:
-      - backlog_network
-    restart: unless-stopped
-
   # Backend API
   backend:
     build: ./backend
     container_name: backlog_backend
     environment:
       # Database
-      - POSTGRES_USER=postgres
+      - POSTGRES_USER=backlog_user
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-backlog_super_secure_password_2024}
-      - POSTGRES_HOST=postgres
+      - POSTGRES_HOST=host.docker.internal
       - POSTGRES_PORT=5432
       - POSTGRES_DB=student_planner
       
@@ -59,9 +42,9 @@ services:
     volumes:
       - ./backend/uploads:/app/uploads
     ports:
-      - "8010:8000"  # Changed from 8000 to 8001 for production
-    depends_on:
-      - postgres
+      - "8010:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - backlog_network
     restart: unless-stopped
@@ -80,16 +63,12 @@ services:
       - NEXT_PUBLIC_API_URL=https://unl-backlog.duckdns.org/api/v1
       - NEXT_PUBLIC_FRONTEND_URL=https://unl-backlog.duckdns.org
     ports:
-      - "3010:3000"  # Changed from 3000 to 3001 for production
+      - "3010:3000"
     depends_on:
       - backend
     networks:
       - backlog_network
     restart: unless-stopped
-
-volumes:
-  postgres_data:
-    driver: local
 
 networks:
   backlog_network:
