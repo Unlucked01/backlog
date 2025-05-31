@@ -139,14 +139,14 @@ print_status "Performing final health checks..."
 sleep 10
 
 # Check if backend is responding
-if curl -f http://localhost:8001/api/v1/health > /dev/null 2>&1; then
+if curl -f http://localhost:8010/api/v1/health > /dev/null 2>&1; then
     print_success "Backend is responding"
 else
     print_warning "Backend health check failed"
 fi
 
 # Check if frontend is responding
-if curl -f http://localhost:3001 > /dev/null 2>&1; then
+if curl -f http://localhost:3010 > /dev/null 2>&1; then
     print_success "Frontend is responding"
 else
     print_warning "Frontend health check failed"
