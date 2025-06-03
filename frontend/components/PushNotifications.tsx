@@ -8,7 +8,8 @@ interface PushNotificationsProps {
   className?: string;
 }
 
-const VAPID_PUBLIC_KEY = 'BJnVERaa5JhyLhe8QlCdH_R4vNUHOjT8TzTxjgDZBXOpJ_HJDrA5s8Put1w1LN6t4hUetN92txqQEPQc6_CyoIc';
+// Используем VAPID ключ из переменных окружения, а если не найден - fallback на тестовый
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BOoVwPyieVNwfox5C4M9al_fXCzBcyi0F3HWkZDToi_ropK_8-2lnBcCQmlffiVY87ffISUseyAxSaKxeRAinOQ';
 
 export default function PushNotifications({ className = '' }: PushNotificationsProps) {
   const [isSupported, setIsSupported] = useState(false);
@@ -18,11 +19,7 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
 
   useEffect(() => {
     console.log('PushNotifications component mounted');
-    checkPushSupport();
-    checkSubscriptionStatus();
-  }, []);
-
-  const checkPushSupport = () => {
+    
     if (typeof window !== 'undefined') {
       const supported = 'serviceWorker' in navigator && 'PushManager' in window;
       console.log('Push support check:', {
@@ -34,15 +31,16 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
       });
       setIsSupported(supported);
       setPermission(Notification.permission);
+      
+      // Проверяем статус подписки только если поддержка есть
+      if (supported) {
+        checkSubscriptionStatus();
+      }
     }
-  };
+  }, []);
 
   const checkSubscriptionStatus = async () => {
     console.log('Checking subscription status...');
-    if (!isSupported) {
-      console.log('Push not supported, skipping subscription check');
-      return;
-    }
 
     try {
       console.log('Getting service worker registration...');

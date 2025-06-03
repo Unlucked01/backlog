@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { tokenUtils, authAPI, achievementsAPI, type User, type UserAchievement, type UserStats } from '@/lib/api';
 import { validationUtils } from '@/lib/utils';
 import PushNotifications from '@/components/PushNotifications';
+import ScheduledNotifications from '@/components/ScheduledNotifications';
 import { 
   HomeIcon,
   UserIcon,
@@ -222,7 +223,7 @@ export default function ProfilePage() {
               <div className="flex items-center mt-2 space-x-4">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
                   <CalendarDaysIcon className="h-4 w-4 mr-1" />
-                  С {new Date(user.created_at).toLocaleDateString('ru-RU')}
+                  {new Date(user.created_at).toLocaleDateString('ru-RU')}
                 </span>
                 {user.is_verified && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -673,6 +674,9 @@ export default function ProfilePage() {
                     <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
                       <PushNotifications />
                     </div>
+
+                    {/* Scheduled Notifications Component */}
+                    <ScheduledNotifications />
 
                     <div className="bg-white border-2 border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-200">
                       <div className="flex items-center justify-between">
