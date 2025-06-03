@@ -96,18 +96,7 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
 
       // Регистрируем service worker если еще не зарегистрирован
       console.log('Checking service worker registration...');
-      let registration = await navigator.serviceWorker.getRegistration();
-      console.log('Existing registration:', registration);
-      
-      if (!registration) {
-        console.log('No existing registration, registering new service worker...');
-        registration = await navigator.serviceWorker.register('/sw.js');
-        console.log('Service worker registered:', registration);
-        
-        console.log('Waiting for service worker to be ready...');
-        await navigator.serviceWorker.ready;
-        console.log('Service worker is ready');
-      }
+      const registration = await navigator.serviceWorker.ready;
 
       // Подписываемся на push уведомления
       console.log('Subscribing to push manager...');

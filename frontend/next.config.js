@@ -2,12 +2,8 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
   register: true,
-  skipWaiting: true,
-  sw: 'sw.js',
-  injectRegister: false,
-  buildExcludes: [/middleware-manifest\.json$/],
+  skipWaiting: true
 });
-
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -15,7 +11,6 @@ const nextConfig = {
   swcMinify: true,
   output: 'standalone',
   async rewrites() {
-    // In development, proxy to local backend
     if (process.env.NODE_ENV === 'development') {
       return [
         {
@@ -24,28 +19,19 @@ const nextConfig = {
         },
       ];
     }
-    // In production, let nginx handle the routing
     return [];
   },
   async headers() {
     return [
       {
-        source: '/sw.js',
+        source: '/manifest.json',
         headers: [
           {
-            key: 'Cache-Control',
-            value: 'no-cache, no-store, must-revalidate',
-          },
-          {
-            key: 'Pragma',
-            value: 'no-cache',
-          },
-          {
-            key: 'Expires',
-            value: '0',
-          },
-        ],
-      },
+            key: 'Content-Type',
+            value: 'application/manifest+json',
+          }
+        ]
+      }
     ];
   },
   env: {
@@ -54,4 +40,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withPWA(nextConfig); 
+module.exports = withPWA(nextConfig);
