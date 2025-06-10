@@ -309,46 +309,91 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
   }
 
   return (
-    <div className={`p-6 bg-white rounded-2xl shadow-lg border border-gray-200 ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
-            {isSubscribed ? (
-              <BellIcon className="h-6 w-6 text-white" />
-            ) : (
-              <BellSlashIcon className="h-6 w-6 text-white" />
-            )}
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">Push-уведомления</h3>
-            <p className="text-sm text-gray-600">
-              {isSubscribed ? 'Включены' : 'Отключены'}
-            </p>
+    <div className={`p-4 sm:p-6 bg-white rounded-2xl shadow-lg border border-gray-200 ${className}`}>
+      {/* Мобильная версия */}
+      <div className="block sm:hidden">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3 flex-1 min-w-0">
+            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex-shrink-0">
+              {isSubscribed ? (
+                <BellIcon className="h-5 w-5 text-white" />
+              ) : (
+                <BellSlashIcon className="h-5 w-5 text-white" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-gray-900 text-sm truncate">Push-уведомления</h3>
+              <p className="text-xs text-gray-600">
+                {isSubscribed ? 'Включены' : 'Отключены'}
+              </p>
+            </div>
           </div>
         </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={isSubscribed ? unsubscribeFromPush : subscribeToPush}
-            disabled={isLoading}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              isSubscribed
-                ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                : 'bg-green-100 text-green-700 hover:bg-green-200'
-            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            {isLoading ? (
+        
+        <button
+          onClick={isSubscribed ? unsubscribeFromPush : subscribeToPush}
+          disabled={isLoading}
+          className={`w-full px-4 py-3 rounded-lg font-medium transition-colors text-sm ${
+            isSubscribed
+              ? 'bg-red-100 text-red-700 hover:bg-red-200'
+              : 'bg-green-100 text-green-700 hover:bg-green-200'
+          } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          {isLoading ? (
+            <div className="flex items-center justify-center space-x-2">
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
-            ) : isSubscribed ? (
-              'Отключить'
-            ) : (
-              'Включить'
-            )}
-          </button>
+              <span>Подождите...</span>
+            </div>
+          ) : isSubscribed ? (
+            'Отключить уведомления'
+          ) : (
+            'Включить уведомления'
+          )}
+        </button>
+      </div>
+
+      {/* Десктопная версия */}
+      <div className="hidden sm:block">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
+              {isSubscribed ? (
+                <BellIcon className="h-6 w-6 text-white" />
+              ) : (
+                <BellSlashIcon className="h-6 w-6 text-white" />
+              )}
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Push-уведомления</h3>
+              <p className="text-sm text-gray-600">
+                {isSubscribed ? 'Включены' : 'Отключены'}
+              </p>
+            </div>
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={isSubscribed ? unsubscribeFromPush : subscribeToPush}
+              disabled={isLoading}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                isSubscribed
+                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {isLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+              ) : isSubscribed ? (
+                'Отключить'
+              ) : (
+                'Включить'
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {permission === 'denied' && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
           <p className="text-sm text-red-700">
             Уведомления заблокированы. Разрешите их в настройках браузера.
           </p>
@@ -356,18 +401,18 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
       )}
 
       {isSubscribed && (
-        <div className="space-y-2 text-sm text-gray-600">
+        <div className="space-y-2 text-sm text-gray-600 mt-4">
           <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span>Напоминания о дедлайнах</span>
+            <span className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></span>
+            <span className="text-xs sm:text-sm">Напоминания о дедлайнах</span>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span>Уведомления о просроченных задачах</span>
+            <span className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></span>
+            <span className="text-xs sm:text-sm">Уведомления о просроченных задачах</span>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span>Ежедневные сводки</span>
+            <span className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></span>
+            <span className="text-xs sm:text-sm">Ежедневные сводки</span>
           </div>
         </div>
       )}
