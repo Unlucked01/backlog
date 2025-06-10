@@ -65,8 +65,8 @@ def read_root():
         "version": settings.VERSION,
         "docs": "/docs",
         "features": {
-            "oauth_enabled": bool(settings.GOOGLE_CLIENT_ID or settings.VK_CLIENT_ID),
+            "oauth_enabled": False,  # OAuth disabled as per PRD requirements
             "push_notifications": bool(settings.VAPID_PRIVATE_KEY),
-            "telegram_bot": bool(settings.TELEGRAM_BOT_TOKEN)
+            "telegram_bot": False  # Telegram integration disabled as per PRD requirements
         }
     } 

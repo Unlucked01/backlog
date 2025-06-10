@@ -106,11 +106,17 @@ def get_upcoming_tasks(db: Session, user_id: int, days: int = 7) -> List[Task]:
 
 def get_overdue_tasks(db: Session, user_id: int) -> List[Task]:
     """Получить просроченные задачи"""
+    # Используем новое поле is_overdue для более точной фильтрации
     return db.query(Task).filter(
         and_(
             Task.user_id == user_id,
-            Task.status != TaskStatus.completed,
-            Task.deadline < datetime.utcnow()
+            or_(
+                Task.is_overdue == True,
+                and_(
+                    Task.status.in_([TaskStatus.pending, TaskStatus.in_progress]),
+                    Task.deadline < datetime.utcnow()
+                )
+            )
         )
     ).all()
 

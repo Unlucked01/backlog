@@ -44,6 +44,24 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
 
     try {
       console.log('Getting service worker registration...');
+      
+      // Проверяем, зарегистрирован ли service worker
+      if (!navigator.serviceWorker.controller) {
+        console.log('No service worker controller found, waiting for registration...');
+        
+        // Ждем регистрацию service worker с таймаутом
+        const registration = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Service worker registration timeout')), 10000)
+          )
+        ]) as ServiceWorkerRegistration;
+        
+        console.log('Service worker ready after wait:', registration);
+      } else {
+        console.log('Service worker controller exists:', navigator.serviceWorker.controller);
+      }
+      
       const registration = await navigator.serviceWorker.ready;
       console.log('Service worker ready:', registration);
       
@@ -55,6 +73,8 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
       console.log('Subscription status set to:', !!subscription);
     } catch (error) {
       console.error('Ошибка проверки подписки:', error);
+      // Не блокируем работу, если service worker не готов
+      setIsSubscribed(false);
     }
   };
 
@@ -96,7 +116,21 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
 
       // Регистрируем service worker если еще не зарегистрирован
       console.log('Checking service worker registration...');
-      const registration = await navigator.serviceWorker.ready;
+      
+      // Проверяем готовность service worker с таймаутом
+      console.log('Service worker controller:', navigator.serviceWorker.controller);
+      console.log('Service worker ready state...');
+      
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Service worker registration timeout after 15 seconds')), 15000)
+        )
+      ]) as ServiceWorkerRegistration;
+      
+      console.log('Service worker registration obtained:', registration);
+      console.log('Registration scope:', registration.scope);
+      console.log('Registration active:', registration.active);
 
       // Подписываемся на push уведомления
       console.log('Subscribing to push manager...');
@@ -216,7 +250,8 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
       
       console.log('Token found:', token ? 'yes' : 'no');
       
-      const response = await fetch('http://localhost:8000/api/v1/auth/test-notification', {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiBaseUrl}/api/v1/auth/test-notification`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

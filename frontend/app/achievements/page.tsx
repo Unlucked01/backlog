@@ -131,20 +131,20 @@ export default function AchievementsPage() {
       <main className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 flex items-center">
-                <TrophyIconSolid className="h-10 w-10 text-yellow-500 mr-4" />
+              <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 flex items-center">
+                <TrophyIconSolid className="h-6 w-6 sm:h-10 sm:w-10 text-yellow-500 mr-2 sm:mr-4" />
                 Достижения
               </h1>
-              <p className="text-lg text-gray-600 mt-2">
+              <p className="text-sm sm:text-lg text-gray-600 mt-2">
                 Выполняйте задачи и получайте награды за свои успехи
               </p>
             </div>
             
             {stats && (
-              <div className="text-right">
-                <div className="text-3xl font-bold text-purple-600">{stats.total_points}</div>
+              <div className="text-left sm:text-right">
+                <div className="text-2xl sm:text-3xl font-bold text-purple-600">{stats.total_points}</div>
                 <div className="text-sm text-gray-600">очков опыта</div>
                 <div className="text-sm text-gray-500">
                   {stats.achievements_count} из {allAchievements.length} достижений
@@ -155,12 +155,12 @@ export default function AchievementsPage() {
         </div>
 
         {/* Experience Points Info */}
-        <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-2xl p-6 mb-8 text-white">
-          <div className="flex items-start space-x-4">
-            <InformationCircleIcon className="h-8 w-8 flex-shrink-0 mt-1" />
+        <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-2xl p-4 sm:p-6 mb-8 text-white">
+          <div className="flex items-start space-x-3 sm:space-x-4">
+            <InformationCircleIcon className="h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0 mt-1" />
             <div>
-              <h3 className="text-xl font-semibold mb-2">Как получать очки опыта?</h3>
-              <ul className="space-y-1 text-purple-100">
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">Как получать очки опыта?</h3>
+              <ul className="space-y-1 text-purple-100 text-sm sm:text-base">
                 <li>• Выполняйте задачи и достигайте целей</li>
                 <li>• Получайте достижения за различные активности</li>
                 <li>• Поддерживайте активность и регулярность</li>
@@ -210,17 +210,17 @@ export default function AchievementsPage() {
 
                 <div className="text-center">
                   {/* Icon */}
-                  <div className={`text-6xl mb-4 ${earned ? '' : 'grayscale opacity-60'}`}>
+                  <div className={`text-4xl sm:text-6xl mb-4 ${earned ? '' : 'grayscale opacity-60'}`}>
                     {achievement.icon}
                   </div>
                   
                   {/* Title */}
-                  <h3 className={`text-xl font-bold mb-2 ${earned ? 'text-yellow-800' : 'text-gray-900'}`}>
+                  <h3 className={`text-lg sm:text-xl font-bold mb-2 ${earned ? 'text-yellow-800' : 'text-gray-900'}`}>
                     {achievement.name}
                   </h3>
                   
                   {/* Description */}
-                  <p className={`text-sm mb-4 ${earned ? 'text-yellow-700' : 'text-gray-600'}`}>
+                  <p className={`text-xs sm:text-sm mb-4 ${earned ? 'text-yellow-700' : 'text-gray-600'}`}>
                     {achievement.description}
                   </p>
                   

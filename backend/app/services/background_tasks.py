@@ -8,6 +8,7 @@ from ..db.session import SessionLocal
 from ..db.models.task import Task
 from ..db.models.user import User
 from .notifications import NotificationService
+from .task_status import TaskStatusService
 
 logger = logging.getLogger(__name__)
 
@@ -169,6 +170,11 @@ class BackgroundTaskService:
         
         while True:
             try:
+                # Обновляем статусы просроченных задач каждые 15 минут
+                updated_count = TaskStatusService.update_overdue_tasks()
+                if updated_count > 0:
+                    logger.info(f"Обновлено статусов просрочки: {updated_count}")
+                
                 # Проверяем напоминания о дедлайнах каждые 15 минут
                 BackgroundTaskService.check_deadline_reminders()
                 

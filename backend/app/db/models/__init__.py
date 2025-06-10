@@ -1,6 +1,8 @@
 from .user import User
 from .task import Task, TaskStep, TaskType, TaskPriority, TaskStatus
 from .goal import Goal, Achievement, UserAchievement, GoalType
+from .push_subscription import PushSubscription
+from .notification import Notification
 
 __all__ = [
     "User",
@@ -12,5 +14,7 @@ __all__ = [
     "Goal",
     "Achievement",
     "UserAchievement",
-    "GoalType"
+    "GoalType",
+    "PushSubscription",
+    "Notification"
 ] 

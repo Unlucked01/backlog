@@ -2,7 +2,8 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from ..core.security import get_password_hash, verify_password
 from ..db.models.user import User
-from ..schemas.user import UserCreate, UserUpdate, UserCreateOAuth
+from ..db.models.push_subscription import PushSubscription
+from ..schemas.user import UserCreate, UserUpdate
 
 
 def get_user(db: Session, user_id: int) -> Optional[User]:
@@ -13,16 +14,7 @@ def get_user_by_email(db: Session, email: str) -> Optional[User]:
     return db.query(User).filter(User.email == email).first()
 
 
-def get_user_by_google_id(db: Session, google_id: str) -> Optional[User]:
-    return db.query(User).filter(User.google_id == google_id).first()
-
-
-def get_user_by_vk_id(db: Session, vk_id: str) -> Optional[User]:
-    return db.query(User).filter(User.vk_id == vk_id).first()
-
-
-def get_user_by_telegram_id(db: Session, telegram_id: str) -> Optional[User]:
-    return db.query(User).filter(User.telegram_id == telegram_id).first()
+# OAuth methods removed as per PRD requirements
 
 
 def create_user(db: Session, user: UserCreate) -> User:
@@ -39,59 +31,7 @@ def create_user(db: Session, user: UserCreate) -> User:
     return db_user
 
 
-def create_oauth_user(db: Session, user: UserCreateOAuth) -> User:
-    """Создает пользователя через OAuth (без пароля)"""
-    import secrets
-    # Генерируем случайный пароль для OAuth пользователей
-    random_password = secrets.token_urlsafe(32)
-    hashed_password = get_password_hash(random_password)
-    
-    db_user = User(
-        email=user.email,
-        hashed_password=hashed_password,
-        full_name=user.full_name,
-        avatar_url=user.avatar_url,
-        google_id=user.google_id,
-        vk_id=user.vk_id,
-        telegram_id=user.telegram_id,
-        telegram_username=user.telegram_username,
-        is_active=True,
-        is_verified=True  # OAuth пользователи считаются верифицированными
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-
-def link_oauth_account(
-    db: Session, 
-    user_id: int, 
-    provider: str, 
-    oauth_id: str, 
-    username: str = None,
-    avatar_url: str = None
-) -> Optional[User]:
-    """Привязывает OAuth аккаунт к существующему пользователю"""
-    user = get_user(db, user_id)
-    if not user:
-        return None
-    
-    if provider == "google":
-        user.google_id = oauth_id
-    elif provider == "vk":
-        user.vk_id = oauth_id
-    elif provider == "telegram":
-        user.telegram_id = oauth_id
-        if username:
-            user.telegram_username = username
-    
-    if avatar_url and not user.avatar_url:
-        user.avatar_url = avatar_url
-    
-    db.commit()
-    db.refresh(user)
-    return user
+# OAuth user creation methods removed as per PRD requirements
 
 
 def update_user(db: Session, user_id: int, user_update: UserUpdate) -> Optional[User]:
@@ -130,12 +70,30 @@ def change_password(db: Session, user_id: int, current_password: str, new_passwo
     return True
 
 
-def update_push_subscription(db: Session, user_id: int, subscription: str) -> Optional[User]:
-    user = get_user(db, user_id)
-    if not user:
-        return None
+def save_push_subscription(db: Session, user_id: int, endpoint: str, p256dh_key: str, auth_key: str) -> bool:
+    """Сохранить push-подписку пользователя"""
+    # Удаляем старую подписку если есть
+    old_subscription = db.query(PushSubscription).filter(PushSubscription.user_id == user_id).first()
+    if old_subscription:
+        db.delete(old_subscription)
     
-    user.push_subscription = subscription
-    db.commit()
-    db.refresh(user)
-    return user 
+    # Создаем новую подписку
+    new_subscription = PushSubscription(
+        user_id=user_id,
+        endpoint=endpoint,
+        p256dh_key=p256dh_key,
+        auth_key=auth_key
+    )
+    db.add(new_subscription)
+    
+    try:
+        db.commit()
+        return True
+    except Exception:
+        db.rollback()
+        return False
+
+
+def get_push_subscription(db: Session, user_id: int) -> Optional[PushSubscription]:
+    """Получить push-подписку пользователя"""
+    return db.query(PushSubscription).filter(PushSubscription.user_id == user_id).first() 

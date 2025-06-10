@@ -13,21 +13,13 @@ class UserCreate(UserBase):
     password: str
 
 
-class UserCreateOAuth(BaseModel):
-    email: EmailStr
-    full_name: Optional[str] = None
-    avatar_url: Optional[str] = None
-    google_id: Optional[str] = None
-    vk_id: Optional[str] = None
-    telegram_id: Optional[str] = None
-    telegram_username: Optional[str] = None
+# OAuth user creation removed as per PRD requirements
 
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     avatar_url: Optional[str] = None
-    telegram_notifications: Optional[bool] = None
     email_notifications: Optional[bool] = None
 
 
@@ -35,11 +27,6 @@ class UserInDBBase(UserBase):
     id: int
     is_verified: bool
     avatar_url: Optional[str] = None
-    google_id: Optional[str] = None
-    vk_id: Optional[str] = None
-    telegram_id: Optional[str] = None
-    telegram_username: Optional[str] = None
-    telegram_notifications: bool
     email_notifications: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
@@ -71,41 +58,7 @@ class UserLogin(BaseModel):
     password: str
 
 
-# OAuth схемы
-class OAuthRequest(BaseModel):
-    provider: str  # 'google', 'vk', 'telegram'
-    redirect_uri: Optional[str] = None
-
-
-class OAuthCallback(BaseModel):
-    provider: str
-    code: str
-    state: Optional[str] = None
-
-
-class GoogleUserInfo(BaseModel):
-    id: str
-    email: str
-    name: str
-    picture: Optional[str] = None
-
-
-class VKUserInfo(BaseModel):
-    id: str
-    email: Optional[str] = None
-    first_name: str
-    last_name: str
-    photo_100: Optional[str] = None
-
-
-class TelegramAuthData(BaseModel):
-    id: str
-    first_name: str
-    last_name: Optional[str] = None
-    username: Optional[str] = None
-    photo_url: Optional[str] = None
-    auth_date: int
-    hash: str
+# OAuth schemas removed as per PRD requirements
 
 
 # Схема для изменения пароля
@@ -117,7 +70,7 @@ class PasswordChange(BaseModel):
 # Схема для push-уведомлений
 class PushSubscription(BaseModel):
     endpoint: str
-    keys: dict
+    keys: dict  # Contains p256dh and auth keys
 
 
 # Схема для push-уведомлений пользователю

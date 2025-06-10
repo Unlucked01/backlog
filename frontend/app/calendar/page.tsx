@@ -264,57 +264,50 @@ export default function CalendarPage() {
                   </div>
 
                   {/* Tasks */}
-                  <div className="space-y-2">
+                  <div className="space-y-1.5 overflow-hidden">
                     {dayTasks.length === 0 ? (
                       <p className="text-gray-400 text-sm text-center py-4">
                         {isPast ? 'Задач не было' : 'Задач нет'}
                       </p>
                     ) : (
-                      dayTasks.slice(0, selectedView === 'week' ? 4 : 2).map((task) => (
-                        <Link href={`/tasks/${task.id}`} key={task.id}>
-                          <div 
-                            className="group/task bg-white/80 backdrop-blur-sm border border-white/30 rounded-xl p-3 transition-all duration-200 hover:bg-white hover:shadow-md cursor-pointer"
-                          >
-                            <div className="flex items-start space-x-3">
-                              <div className="flex-shrink-0 mt-1">
+                      <>
+                        {dayTasks.slice(0, selectedView === 'week' ? 3 : 2).map((task) => (
+                          <Link href={`/tasks/${task.id}`} key={task.id}>
+                            <div 
+                              className="group/task bg-white/80 backdrop-blur-sm border border-white/30 rounded-lg p-2 transition-all duration-200 hover:bg-white hover:shadow-md cursor-pointer"
+                            >
+                              <div className="flex items-center space-x-2">
                                 <div 
-                                  className="w-3 h-3 rounded-full shadow-sm" 
+                                  className="w-2.5 h-2.5 rounded-full shadow-sm flex-shrink-0" 
                                   style={{ backgroundColor: task.color }}
                                 />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center space-x-2 mb-1">
-                                  {getTaskTypeIcon(task.task_type)}
-                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${taskUtils.getPriorityColor(task.priority)}`}>
-                                    {taskUtils.getPriorityLabel(task.priority)}
-                                  </span>
-                                </div>
-                                <h4 className="font-medium text-gray-900 text-sm leading-tight group-hover/task:text-blue-600 transition-colors">
-                                  {task.title}
-                                </h4>
-                                <div className="flex items-center space-x-2 mt-1">
-                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${taskUtils.getStatusColor(task.status)}`}>
-                                    {task.status === 'completed' && <CheckCircleIcon className="inline h-3 w-3 mr-1" />}
-                                    {taskUtils.getStatusLabel(task.status)}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    {dateUtils.format(new Date(task.deadline), 'HH:mm')}
-                                  </span>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-medium text-gray-900 text-xs leading-tight group-hover/task:text-blue-600 transition-colors truncate">
+                                    {task.title}
+                                  </h4>
+                                  <div className="flex items-center space-x-1 mt-0.5">
+                                    <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${taskUtils.getPriorityColor(task.priority)}`}>
+                                      {taskUtils.getPriorityLabel(task.priority).slice(0, 3)}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      {dateUtils.format(new Date(task.deadline), 'HH:mm')}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </Link>
-                      ))
-                    )}
-                    
-                    {dayTasks.length > (selectedView === 'week' ? 4 : 2) && (
-                      <Link 
-                        href={`/tasks?date=${dateKey}`}
-                        className="block text-center text-blue-600 hover:text-blue-700 text-sm font-medium py-2 rounded-lg hover:bg-blue-50 transition-colors"
-                      >
-                        +{dayTasks.length - (selectedView === 'week' ? 4 : 2)} еще
-                      </Link>
+                          </Link>
+                        ))}
+                        
+                        {dayTasks.length > (selectedView === 'week' ? 3 : 2) && (
+                          <Link 
+                            href={`/tasks?date=${dateKey}`}
+                            className="block text-center text-blue-600 hover:text-blue-700 text-xs font-medium py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+                          >
+                            +{dayTasks.length - (selectedView === 'week' ? 3 : 2)} еще
+                          </Link>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

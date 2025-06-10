@@ -15,15 +15,10 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
     
-    # OAuth fields
-    google_id = Column(String, nullable=True)
-    vk_id = Column(String, nullable=True)
-    telegram_id = Column(String, nullable=True)
-    telegram_username = Column(String, nullable=True)
+    # OAuth fields removed as per PRD requirements
+    # Only email/password authentication is supported
     
-    # Notification settings
-    push_subscription = Column(Text, nullable=True)  # JSON for web push
-    telegram_notifications = Column(Boolean, default=False)
+    # Notification settings - only WebPush and Email
     email_notifications = Column(Boolean, default=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -32,4 +27,6 @@ class User(Base):
     # Relationships
     tasks = relationship("Task", back_populates="user")
     goals = relationship("Goal", back_populates="user")
-    achievements = relationship("UserAchievement", back_populates="user") 
+    achievements = relationship("UserAchievement", back_populates="user")
+    push_subscription_data = relationship("PushSubscription", back_populates="user", uselist=False)
+    notifications = relationship("Notification", back_populates="user") 

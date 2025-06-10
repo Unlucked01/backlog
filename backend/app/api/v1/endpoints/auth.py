@@ -9,10 +9,8 @@ from ....crud import user as crud_user
 from ....db.session import get_db
 from ....schemas.user import (
     User, UserCreate, Token, UserLogin, PasswordChange, PushSubscription,
-    OAuthRequest, OAuthCallback, GoogleUserInfo, VKUserInfo, TelegramAuthData,
-    UserCreateOAuth, PushNotification
+    PushNotification
 )
-from ....services.oauth import OAuthService
 from ....services.notifications import NotificationService
 
 router = APIRouter()
@@ -104,171 +102,11 @@ def login_json(user_login: UserLogin, db: Session = Depends(get_db)) -> Any:
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-# OAuth Endpoints
-
-@router.get("/oauth/{provider}/url")
-async def get_oauth_url(provider: str) -> dict:
-    """
-    Получить URL для OAuth авторизации
-    """
-    state = OAuthService.generate_state()
-    
-    if provider == "google":
-        auth_url = await OAuthService.get_google_auth_url(state)
-    elif provider == "vk":
-        auth_url = await OAuthService.get_vk_auth_url(state)
-    elif provider == "telegram":
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Telegram OAuth использует Telegram Login Widget"
-        )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Неподдерживаемый провайдер"
-        )
-    
-    return {"auth_url": auth_url, "state": state}
+# OAuth endpoints removed as per PRD requirements
+# Only email/password authentication is supported
 
 
-@router.post("/oauth/{provider}/callback", response_model=Token)
-async def oauth_callback(
-    provider: str,
-    callback_data: OAuthCallback,
-    db: Session = Depends(get_db)
-) -> Any:
-    """
-    Обработка callback от OAuth провайдера
-    """
-    try:
-        if provider == "google":
-            user_info = await OAuthService.exchange_google_code(callback_data.code)
-            
-            # Проверяем существует ли пользователь с Google ID
-            existing_user = crud_user.get_user_by_google_id(db, user_info.id)
-            if existing_user:
-                user = existing_user
-            else:
-                # Проверяем по email
-                existing_user = crud_user.get_user_by_email(db, user_info.email)
-                if existing_user:
-                    # Привязываем Google аккаунт к существующему пользователю
-                    user = crud_user.link_oauth_account(
-                        db, existing_user.id, "google", user_info.id, avatar_url=user_info.picture
-                    )
-                else:
-                    # Создаем нового пользователя
-                    oauth_user = UserCreateOAuth(
-                        email=user_info.email,
-                        full_name=user_info.name,
-                        avatar_url=user_info.picture,
-                        google_id=user_info.id
-                    )
-                    user = crud_user.create_oauth_user(db, oauth_user)
-                    
-                    # Отправляем приветственное уведомление
-                    NotificationService.send_welcome_notification(
-                        db, user.id, user.full_name or user.email.split('@')[0]
-                    )
-        
-        elif provider == "vk":
-            user_info = await OAuthService.exchange_vk_code(callback_data.code)
-            
-            # Проверяем существует ли пользователь с VK ID
-            existing_user = crud_user.get_user_by_vk_id(db, user_info.id)
-            if existing_user:
-                user = existing_user
-            else:
-                # Если email предоставлен, проверяем по нему
-                if user_info.email:
-                    existing_user = crud_user.get_user_by_email(db, user_info.email)
-                    if existing_user:
-                        user = crud_user.link_oauth_account(
-                            db, existing_user.id, "vk", user_info.id, avatar_url=user_info.photo_100
-                        )
-                    else:
-                        oauth_user = UserCreateOAuth(
-                            email=user_info.email,
-                            full_name=f"{user_info.first_name} {user_info.last_name}",
-                            avatar_url=user_info.photo_100,
-                            vk_id=user_info.id
-                        )
-                        user = crud_user.create_oauth_user(db, oauth_user)
-                        
-                        NotificationService.send_welcome_notification(
-                            db, user.id, user.full_name or user.email.split('@')[0]
-                        )
-                else:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="VK не предоставил email. Используйте обычную регистрацию."
-                    )
-        
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Неподдерживаемый провайдер"
-            )
-        
-        # Создаем токен
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = security.create_access_token(
-            data={"sub": user.email}, expires_delta=access_token_expires
-        )
-        return {"access_token": access_token, "token_type": "bearer"}
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Ошибка OAuth авторизации: {str(e)}"
-        )
-
-
-@router.post("/oauth/telegram", response_model=Token)
-async def telegram_login(
-    auth_data: TelegramAuthData,
-    db: Session = Depends(get_db)
-) -> Any:
-    """
-    Авторизация через Telegram Login Widget
-    """
-    # Проверяем подлинность данных
-    if not OAuthService.verify_telegram_auth(auth_data):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Неверные данные Telegram авторизации"
-        )
-    
-    # Проверяем существует ли пользователь с Telegram ID
-    existing_user = crud_user.get_user_by_telegram_id(db, auth_data.id)
-    if existing_user:
-        user = existing_user
-    else:
-        # Создаем временный email для Telegram пользователей
-        temp_email = f"telegram_{auth_data.id}@studentplanner.local"
-        full_name = auth_data.first_name
-        if auth_data.last_name:
-            full_name += f" {auth_data.last_name}"
-        
-        oauth_user = UserCreateOAuth(
-            email=temp_email,
-            full_name=full_name,
-            avatar_url=auth_data.photo_url,
-            telegram_id=auth_data.id,
-            telegram_username=auth_data.username
-        )
-        user = crud_user.create_oauth_user(db, oauth_user)
-        
-        NotificationService.send_welcome_notification(
-            db, user.id, user.full_name or auth_data.username or "Пользователь"
-        )
-    
-    # Создаем токен
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = security.create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+# All OAuth endpoints removed as per PRD requirements
 
 
 @router.get("/me", response_model=User)
@@ -305,10 +143,10 @@ def save_push_subscription(
     """
     Сохранить push-подписку для уведомлений
     """
-    import json
-    subscription_json = json.dumps(subscription.dict())
-    updated_user = crud_user.update_push_subscription(db, current_user.id, subscription_json)
-    if not updated_user:
+    success = crud_user.save_push_subscription(
+        db, current_user.id, subscription.endpoint, subscription.keys.p256dh, subscription.keys.auth
+    )
+    if not success:
         raise HTTPException(status_code=400, detail="Ошибка сохранения подписки")
     
     # Отправляем тестовое уведомление

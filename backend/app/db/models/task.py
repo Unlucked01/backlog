@@ -1,7 +1,9 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, Enum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.hybrid import hybrid_property
 import enum
+from datetime import datetime
 from ..base import Base
 
 
@@ -45,6 +47,9 @@ class Task(Base):
     deadline = Column(DateTime(timezone=True), nullable=False)
     completed_at = Column(DateTime(timezone=True), nullable=True)
     
+    # Поле для хранения статуса просрочки
+    is_overdue = Column(Boolean, default=False, index=True)
+    
     # Repetition settings
     is_recurring = Column(Boolean, default=False)
     recurrence_pattern = Column(String, nullable=True)  # "daily", "weekly", "monthly"
@@ -58,6 +63,14 @@ class Task(Base):
     # Relationships
     user = relationship("User", back_populates="tasks")
     steps = relationship("TaskStep", back_populates="task", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="task")
+    
+    @hybrid_property
+    def is_actually_overdue(self):
+        """Динамическое определение просрочки"""
+        if self.status == TaskStatus.completed:
+            return False
+        return datetime.utcnow() > self.deadline
 
 
 class TaskStep(Base):

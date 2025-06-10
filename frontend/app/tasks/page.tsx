@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { tokenUtils, tasksAPI, type Task } from '@/lib/api';
 import { dateUtils, taskUtils, TASK_TYPES, TASK_PRIORITIES, TASK_STATUSES } from '@/lib/utils';
@@ -35,6 +35,7 @@ const getTaskTypeIcon = (type: string) => {
 
 export default function TasksPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -48,8 +49,24 @@ export default function TasksPage() {
       router.push('/login');
       return;
     }
+    
+    // Читаем параметры из URL при первой загрузке
+    const urlFilters = {
+      task_type: searchParams.get('task_type') || '',
+      priority: searchParams.get('priority') || '',
+      status: searchParams.get('status') || ''
+    };
+    
+    // Если есть параметры в URL, устанавливаем их в фильтры
+    if (urlFilters.task_type || urlFilters.priority || urlFilters.status) {
+      setFilters(urlFilters);
+    }
+  }, [router, searchParams]);
+
+  useEffect(() => {
+    if (!tokenUtils.isAuthenticated()) return;
     loadTasks();
-  }, [router, filters]);
+  }, [filters]);
 
   const loadTasks = async () => {
     try {
