@@ -46,14 +46,29 @@ class NotificationService:
                 ]
             }
             
-            # Декодируем base64-encoded PEM ключ
+            # VAPID приватный ключ - это base64-encoded PEM строка
             import base64
-            vapid_private_pem = base64.urlsafe_b64decode(settings.VAPID_PRIVATE_KEY + '==')
+            
+            # Декодируем base64 чтобы получить PEM строку
+            try:
+                # Добавляем padding если нужно
+                padding = len(settings.VAPID_PRIVATE_KEY) % 4
+                if padding:
+                    vapid_key_padded = settings.VAPID_PRIVATE_KEY + '=' * (4 - padding)
+                else:
+                    vapid_key_padded = settings.VAPID_PRIVATE_KEY
+                    
+                vapid_private_pem = base64.urlsafe_b64decode(vapid_key_padded).decode('utf-8')
+                logger.info("Successfully decoded VAPID private key")
+            except Exception as e:
+                logger.error(f"Failed to decode VAPID private key: {e}")
+                # Если не получается декодировать, используем как есть
+                vapid_private_pem = settings.VAPID_PRIVATE_KEY
             
             webpush(
                 subscription_info=subscription_info,
                 data=json.dumps(payload),
-                vapid_private_key=vapid_private_pem.decode('utf-8'),
+                vapid_private_key=vapid_private_pem,
                 vapid_claims={
                     "sub": settings.VAPID_SUBJECT
                 }
