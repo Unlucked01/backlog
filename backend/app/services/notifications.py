@@ -49,30 +49,56 @@ class NotificationService:
             # VAPID приватный ключ - это base64-encoded PEM строка
             import base64
             
-            # Декодируем base64 чтобы получить PEM строку
+            # pywebpush может принимать ключ в разных форматах, попробуем несколько вариантов
             try:
-                # Добавляем padding если нужно
+                # Вариант 1: Попробуем использовать как base64-encoded bytes
                 padding = len(settings.VAPID_PRIVATE_KEY) % 4
                 if padding:
                     vapid_key_padded = settings.VAPID_PRIVATE_KEY + '=' * (4 - padding)
                 else:
                     vapid_key_padded = settings.VAPID_PRIVATE_KEY
+                
+                vapid_private_bytes = base64.urlsafe_b64decode(vapid_key_padded)
+                logger.info("Using VAPID private key as bytes")
+                
+                webpush(
+                    subscription_info=subscription_info,
+                    data=json.dumps(payload),
+                    vapid_private_key=vapid_private_bytes,
+                    vapid_claims={
+                        "sub": settings.VAPID_SUBJECT
+                    }
+                )
+                
+            except Exception as e1:
+                logger.warning(f"Failed with bytes format: {e1}")
+                try:
+                    # Вариант 2: Попробуем как PEM строку
+                    vapid_private_pem = vapid_private_bytes.decode('utf-8')
+                    logger.info("Using VAPID private key as PEM string")
                     
-                vapid_private_pem = base64.urlsafe_b64decode(vapid_key_padded).decode('utf-8')
-                logger.info("Successfully decoded VAPID private key")
-            except Exception as e:
-                logger.error(f"Failed to decode VAPID private key: {e}")
-                # Если не получается декодировать, используем как есть
-                vapid_private_pem = settings.VAPID_PRIVATE_KEY
-            
-            webpush(
-                subscription_info=subscription_info,
-                data=json.dumps(payload),
-                vapid_private_key=vapid_private_pem,
-                vapid_claims={
-                    "sub": settings.VAPID_SUBJECT
-                }
-            )
+                    webpush(
+                        subscription_info=subscription_info,
+                        data=json.dumps(payload),
+                        vapid_private_key=vapid_private_pem,
+                        vapid_claims={
+                            "sub": settings.VAPID_SUBJECT
+                        }
+                    )
+                    
+                except Exception as e2:
+                    logger.warning(f"Failed with PEM string format: {e2}")
+                    # Вариант 3: Попробуем использовать raw base64 строку
+                    logger.info("Using VAPID private key as raw base64 string")
+                    
+                    webpush(
+                        subscription_info=subscription_info,
+                        data=json.dumps(payload),
+                        vapid_private_key=settings.VAPID_PRIVATE_KEY,
+                        vapid_claims={
+                            "sub": settings.VAPID_SUBJECT
+                        }
+                    )
             return True
             
         except WebPushException as e:
