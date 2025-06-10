@@ -153,6 +153,11 @@ export const authAPI = {
     const response = await api.post('/api/v1/auth/push-subscription', subscription);
     return response.data;
   },
+
+  async sendTestNotification(): Promise<{ message: string }> {
+    const response = await api.post('/api/v1/auth/test-notification');
+    return response.data;
+  },
 };
 
 // API методы для задач

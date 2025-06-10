@@ -211,10 +211,15 @@ export default function ScheduledNotifications() {
 
   const sendTestNotification = async () => {
     try {
+      // Отправляем запрос на backend для отправки push-уведомления
+      const response = await authAPI.sendTestNotification();
+      console.log('Test notification sent:', response);
+      
+      // Дополнительно показываем локальное уведомление для подтверждения
       if ('serviceWorker' in navigator && 'PushManager' in window) {
         if (Notification.permission === 'granted') {
-          new Notification('🔔 Тестовое уведомление', {
-            body: 'Запланированные уведомления работают корректно!',
+          new Notification('🔔 Тестовое уведомление отправлено', {
+            body: 'Проверьте получение push-уведомления',
             icon: '/icons/icon-192x192.png',
             badge: '/icons/icon-72x72.png',
             tag: 'test-scheduled',
@@ -224,6 +229,7 @@ export default function ScheduledNotifications() {
       }
     } catch (error) {
       console.error('Ошибка отправки тестового уведомления:', error);
+      alert('Ошибка отправки тестового уведомления');
     }
   };
 

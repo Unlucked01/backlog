@@ -53,7 +53,7 @@ class NotificationService:
             webpush(
                 subscription_info=subscription_info,
                 data=json.dumps(payload),
-                vapid_private_key=vapid_private_pem,
+                vapid_private_key=vapid_private_pem.decode('utf-8'),
                 vapid_claims={
                     "sub": settings.VAPID_SUBJECT
                 }
