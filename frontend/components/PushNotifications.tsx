@@ -190,7 +190,8 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
         new Notification('🎉 Уведомления включены!', {
           body: 'Теперь вы будете получать напоминания о дедлайнах'
         });
-        sendTestNotification();
+        // Отправляем тестовое уведомление через сервер сразу после подписки
+        sendServerTestNotification();
       }
 
       console.log('=== Push subscription completed successfully ===');
@@ -254,12 +255,8 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
     }
   };
 
-  const sendTestNotification = async () => {
-    console.log('=== Sending test notification ===');
-    if (!isSubscribed) {
-      console.log('Not subscribed, aborting test notification');
-      return;
-    }
+  const sendServerTestNotification = async () => {
+    console.log('=== Sending server test notification ===');
 
     try {
       // Получаем токен из cookies (как в остальном API)
@@ -287,10 +284,9 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
         throw new Error(`HTTP ${response.status}: ${responseData}`);
       }
       
-      alert('Тестовое уведомление отправлено!');
+      console.log('Server test notification sent successfully');
     } catch (error) {
       console.error('Ошибка отправки тестового уведомления:', error);
-      alert('Ошибка отправки тестового уведомления');
     }
   };
 
@@ -330,26 +326,37 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
           </div>
         </div>
         
-        <button
-          onClick={isSubscribed ? unsubscribeFromPush : subscribeToPush}
-          disabled={isLoading}
-          className={`w-full px-4 py-3 rounded-lg font-medium transition-colors text-sm ${
-            isSubscribed
-              ? 'bg-red-100 text-red-700 hover:bg-red-200'
-              : 'bg-green-100 text-green-700 hover:bg-green-200'
-          } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          {isLoading ? (
-            <div className="flex items-center justify-center space-x-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
-              <span>Подождите...</span>
-            </div>
-          ) : isSubscribed ? (
-            'Отключить уведомления'
-          ) : (
-            'Включить уведомления'
+        <div className="space-y-2">
+          <button
+            onClick={isSubscribed ? unsubscribeFromPush : subscribeToPush}
+            disabled={isLoading}
+            className={`w-full px-4 py-3 rounded-lg font-medium transition-colors text-sm ${
+              isSubscribed
+                ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                : 'bg-green-100 text-green-700 hover:bg-green-200'
+            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                <span>Подождите...</span>
+              </div>
+            ) : isSubscribed ? (
+              'Отключить уведомления'
+            ) : (
+              'Включить уведомления'
+            )}
+          </button>
+          
+          {isSubscribed && (
+            <button
+              onClick={sendServerTestNotification}
+              className="w-full px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+            >
+              Отправить тестовое уведомление
+            </button>
           )}
-        </button>
+        </div>
       </div>
 
       {/* Десктопная версия */}
@@ -371,6 +378,14 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
             </div>
           </div>
           <div className="flex space-x-2">
+            {isSubscribed && (
+              <button
+                onClick={sendServerTestNotification}
+                className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+              >
+                Тест
+              </button>
+            )}
             <button
               onClick={isSubscribed ? unsubscribeFromPush : subscribeToPush}
               disabled={isLoading}
