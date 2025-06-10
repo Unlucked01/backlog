@@ -215,16 +215,21 @@ export default function ScheduledNotifications() {
       const response = await authAPI.sendTestNotification();
       console.log('Test notification sent:', response);
       
-      // Дополнительно показываем локальное уведомление для подтверждения
+      // Дополнительно показываем локальное уведомление для подтверждения через Service Worker
       if ('serviceWorker' in navigator && 'PushManager' in window) {
         if (Notification.permission === 'granted') {
-          new Notification('🔔 Тестовое уведомление отправлено', {
-            body: 'Проверьте получение push-уведомления',
-            icon: '/icons/icon-192x192.png',
-            badge: '/icons/icon-72x72.png',
-            tag: 'test-scheduled',
-            requireInteraction: false,
-          });
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            registration.showNotification('🔔 Тестовое уведомление отправлено', {
+              body: 'Проверьте получение push-уведомления',
+              icon: '/icons/icon-192x192.png',
+              badge: '/icons/icon-72x72.png',
+              tag: 'test-scheduled',
+              requireInteraction: false,
+            });
+          } catch (error) {
+            console.error('Ошибка показа уведомления через Service Worker:', error);
+          }
         }
       }
     } catch (error) {

@@ -184,12 +184,18 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
       setIsSubscribed(true);
       console.log('Subscription state updated to true');
       
-      // Показываем уведомление об успехе
+      // Показываем уведомление об успехе через Service Worker
       if (Notification.permission === 'granted') {
         console.log('Showing success notification...');
-        new Notification('🎉 Уведомления включены!', {
-          body: 'Теперь вы будете получать напоминания о дедлайнах'
-        });
+        try {
+          registration.showNotification('🎉 Уведомления включены!', {
+            body: 'Теперь вы будете получать напоминания о дедлайнах',
+            icon: '/icons/icon-192x192.png',
+            badge: '/icons/icon-72x72.png',
+          });
+        } catch (error) {
+          console.error('Ошибка показа уведомления об успехе:', error);
+        }
         // Тестовое уведомление отправляется автоматически после успешной подписки
       }
 
