@@ -144,7 +144,7 @@ def save_push_subscription(
     Сохранить push-подписку для уведомлений
     """
     success = crud_user.save_push_subscription(
-        db, current_user.id, subscription.endpoint, subscription.keys.p256dh, subscription.keys.auth
+        db, current_user.id, subscription.endpoint, subscription.keys['p256dh'], subscription.keys['auth']
     )
     if not success:
         raise HTTPException(status_code=400, detail="Ошибка сохранения подписки")
