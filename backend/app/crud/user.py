@@ -1,9 +1,12 @@
+import logging
 from typing import Optional
 from sqlalchemy.orm import Session
 from ..core.security import get_password_hash, verify_password
 from ..db.models.user import User
 from ..db.models.push_subscription import PushSubscription
 from ..schemas.user import UserCreate, UserUpdate
+
+logger = logging.getLogger(__name__)
 
 
 def get_user(db: Session, user_id: int) -> Optional[User]:
@@ -72,25 +75,26 @@ def change_password(db: Session, user_id: int, current_password: str, new_passwo
 
 def save_push_subscription(db: Session, user_id: int, endpoint: str, p256dh_key: str, auth_key: str) -> bool:
     """Сохранить push-подписку пользователя"""
-    # Удаляем старую подписку если есть
-    old_subscription = db.query(PushSubscription).filter(PushSubscription.user_id == user_id).first()
-    if old_subscription:
-        db.delete(old_subscription)
-    
-    # Создаем новую подписку
-    new_subscription = PushSubscription(
-        user_id=user_id,
-        endpoint=endpoint,
-        p256dh_key=p256dh_key,
-        auth_key=auth_key
-    )
-    db.add(new_subscription)
-    
     try:
+        # Удаляем старую подписку если есть
+        old_subscription = db.query(PushSubscription).filter(PushSubscription.user_id == user_id).first()
+        if old_subscription:
+            db.delete(old_subscription)
+            db.commit()  # Важно: коммитим удаление перед созданием новой
+        
+        # Создаем новую подписку
+        new_subscription = PushSubscription(
+            user_id=user_id,
+            endpoint=endpoint,
+            p256dh_key=p256dh_key,
+            auth_key=auth_key
+        )
+        db.add(new_subscription)
         db.commit()
         return True
-    except Exception:
+    except Exception as e:
         db.rollback()
+        logger.error(f"Ошибка сохранения push-подписки для пользователя {user_id}: {e}")
         return False
 
 

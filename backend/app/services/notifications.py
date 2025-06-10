@@ -71,16 +71,23 @@ class NotificationService:
     ) -> bool:
         """Отправляет уведомление конкретному пользователю"""
         user = crud_user.get_user(db, user_id)
-        if not user or not user.push_subscription:
+        push_subscription = crud_user.get_push_subscription(db, user_id)
+        if not user or not push_subscription:
             return False
         
         try:
-            subscription_info = json.loads(user.push_subscription)
+            subscription_info = {
+                "endpoint": push_subscription.endpoint,
+                "keys": {
+                    "p256dh": push_subscription.p256dh_key,
+                    "auth": push_subscription.auth_key
+                }
+            }
             return NotificationService.send_push_notification(
                 subscription_info, notification
             )
-        except json.JSONDecodeError:
-            logger.error(f"Некорректная подписка для пользователя {user_id}")
+        except Exception as e:
+            logger.error(f"Ошибка формирования данных подписки для пользователя {user_id}: {e}")
             return False
     
     @staticmethod
