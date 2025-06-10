@@ -46,50 +46,20 @@ class NotificationService:
                 ]
             }
             
-            # Определяем формат VAPID ключа и используем соответствующий метод
-            import base64
-            
+            # pywebpush может принимать ключ в base64 формате напрямую
+            # Попробуем использовать ключ как base64 строку без декодирования
             vapid_private_key = settings.VAPID_PRIVATE_KEY
             
-            # Проверяем, начинается ли ключ с "-----BEGIN PRIVATE KEY-----"
-            if vapid_private_key.startswith("-----BEGIN PRIVATE KEY-----"):
-                # Ключ уже в PEM формате, используем как есть
-                logger.info("Using VAPID private key as PEM string")
-                
-                webpush(
-                    subscription_info=subscription_info,
-                    data=json.dumps(payload),
-                    vapid_private_key=vapid_private_key,
-                    vapid_claims={
-                        "sub": settings.VAPID_SUBJECT
-                    }
-                )
-                
-            else:
-                # Ключ в base64 формате, декодируем в PEM
-                try:
-                    # Добавляем padding если нужно
-                    padding = len(vapid_private_key) % 4
-                    if padding:
-                        vapid_key_padded = vapid_private_key + '=' * (4 - padding)
-                    else:
-                        vapid_key_padded = vapid_private_key
-                    
-                    vapid_private_pem = base64.urlsafe_b64decode(vapid_key_padded).decode('utf-8')
-                    logger.info("Decoded base64 VAPID private key to PEM")
-                    
-                    webpush(
-                        subscription_info=subscription_info,
-                        data=json.dumps(payload),
-                        vapid_private_key=vapid_private_pem,
-                        vapid_claims={
-                            "sub": settings.VAPID_SUBJECT
-                        }
-                    )
-                    
-                except Exception as e:
-                    logger.error(f"Failed to decode base64 VAPID key: {e}")
-                    raise e
+            logger.info("Trying VAPID private key as base64 string directly")
+            
+            webpush(
+                subscription_info=subscription_info,
+                data=json.dumps(payload),
+                vapid_private_key=vapid_private_key,
+                vapid_claims={
+                    "sub": settings.VAPID_SUBJECT
+                }
+            )
             return True
             
         except WebPushException as e:
