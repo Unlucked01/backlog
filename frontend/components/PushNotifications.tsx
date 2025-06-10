@@ -190,8 +190,7 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
         new Notification('🎉 Уведомления включены!', {
           body: 'Теперь вы будете получать напоминания о дедлайнах'
         });
-        // Отправляем тестовое уведомление через сервер сразу после подписки
-        sendServerTestNotification();
+        // Тестовое уведомление отправляется автоматически после успешной подписки
       }
 
       console.log('=== Push subscription completed successfully ===');
@@ -255,40 +254,7 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
     }
   };
 
-  const sendServerTestNotification = async () => {
-    console.log('=== Sending server test notification ===');
 
-    try {
-      // Получаем токен из cookies (как в остальном API)
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('access_token='))
-        ?.split('=')[1];
-      
-      console.log('Token found:', token ? 'yes' : 'no');
-      
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiBaseUrl}/api/v1/auth/test-notification`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      console.log('Test notification response status:', response.status);
-      const responseData = await response.text();
-      console.log('Test notification response:', responseData);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${responseData}`);
-      }
-      
-      console.log('Server test notification sent successfully');
-    } catch (error) {
-      console.error('Ошибка отправки тестового уведомления:', error);
-    }
-  };
 
   if (!isSupported) {
     return (
@@ -347,15 +313,6 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
               'Включить уведомления'
             )}
           </button>
-          
-          {isSubscribed && (
-            <button
-              onClick={sendServerTestNotification}
-              className="w-full px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
-            >
-              Отправить тестовое уведомление
-            </button>
-          )}
         </div>
       </div>
 
@@ -378,14 +335,6 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
             </div>
           </div>
           <div className="flex space-x-2">
-            {isSubscribed && (
-              <button
-                onClick={sendServerTestNotification}
-                className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
-              >
-                Тест
-              </button>
-            )}
             <button
               onClick={isSubscribed ? unsubscribeFromPush : subscribeToPush}
               disabled={isLoading}

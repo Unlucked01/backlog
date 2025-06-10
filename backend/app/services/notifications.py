@@ -48,7 +48,7 @@ class NotificationService:
             
             # Декодируем base64-encoded PEM ключ
             import base64
-            vapid_private_pem = base64.urlsafe_b64decode(settings.VAPID_PRIVATE_KEY + '==').decode('utf-8')
+            vapid_private_pem = base64.urlsafe_b64decode(settings.VAPID_PRIVATE_KEY + '==')
             
             webpush(
                 subscription_info=subscription_info,
