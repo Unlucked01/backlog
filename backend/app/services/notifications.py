@@ -46,14 +46,10 @@ class NotificationService:
                 ]
             }
             
-            # Конвертируем base64 VAPID ключ в байты для pywebpush
-            import base64
-            vapid_private_bytes = base64.urlsafe_b64decode(settings.VAPID_PRIVATE_KEY + '==')
-            
             webpush(
                 subscription_info=subscription_info,
                 data=json.dumps(payload),
-                vapid_private_key=vapid_private_bytes,
+                vapid_private_key=settings.VAPID_PRIVATE_KEY,
                 vapid_claims={
                     "sub": settings.VAPID_SUBJECT
                 }
