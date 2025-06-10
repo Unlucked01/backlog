@@ -106,10 +106,20 @@ class NotificationService:
         notification: PushNotification
     ) -> bool:
         """Отправляет уведомление конкретному пользователю"""
+        logger.info(f"Отправка уведомления пользователю {user_id}: {notification.title}")
+        
         user = crud_user.get_user(db, user_id)
         push_subscription = crud_user.get_push_subscription(db, user_id)
-        if not user or not push_subscription:
+        
+        if not user:
+            logger.error(f"Пользователь {user_id} не найден")
             return False
+            
+        if not push_subscription:
+            logger.error(f"Push-подписка для пользователя {user_id} не найдена")
+            return False
+        
+        logger.info(f"Найдена подписка для пользователя {user_id}: endpoint={push_subscription.endpoint[:50]}...")
         
         try:
             subscription_info = {
@@ -119,9 +129,11 @@ class NotificationService:
                     "auth": push_subscription.auth_key
                 }
             }
-            return NotificationService.send_push_notification(
+            result = NotificationService.send_push_notification(
                 subscription_info, notification
             )
+            logger.info(f"Результат отправки уведомления пользователю {user_id}: {result}")
+            return result
         except Exception as e:
             logger.error(f"Ошибка формирования данных подписки для пользователя {user_id}: {e}")
             return False
