@@ -677,22 +677,6 @@ export default function ProfilePage() {
 
                     {/* Scheduled Notifications Component */}
                     <ScheduledNotifications />
-
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-                      <div className="flex items-start">
-                        <SparklesIcon className="h-6 w-6 text-blue-600 mr-3 mt-1" />
-                        <div>
-                          <h3 className="font-semibold text-blue-900 mb-2">Скоро будет доступно</h3>
-                          <ul className="text-sm text-blue-800 space-y-1">
-                            <li>• Email уведомления о дедлайнах</li>
-                            <li>• Интеграция с Telegram ботом</li>
-                            <li>• Настройка времени уведомлений</li>
-                            <li>• Выбор типов уведомлений</li>
-                            <li>• Напоминания о целях</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               )}

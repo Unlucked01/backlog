@@ -14,8 +14,12 @@ try:
     private_key = ec.generate_private_key(ec.SECP256R1())
     public_key = private_key.public_key()
     
-    # Сериализуем приватный ключ
-    private_pem = private_key.private_numbers().private_value.to_bytes(32, 'big')
+    # Сериализуем приватный ключ в PEM формате
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption()
+    )
     private_key_b64 = base64.urlsafe_b64encode(private_pem).decode('ascii').rstrip('=')
     
     # Сериализуем публичный ключ

@@ -252,62 +252,130 @@ export default function ScheduledNotifications() {
           {schedules.map((schedule, index) => (
             <div 
               key={schedule.type}
-              className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+              className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
             >
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={schedule.enabled}
-                    onChange={() => toggleSchedule(index)}
-                    className="h-5 w-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                  />
+              {/* Mobile Layout */}
+              <div className="block sm:hidden">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={schedule.enabled}
+                      onChange={() => toggleSchedule(index)}
+                      className="h-5 w-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 mt-0.5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-gray-900 text-sm">
+                        {scheduleTypeNames[schedule.type]}
+                      </h4>
+                      <p className="text-xs text-gray-600">
+                        {schedule.type === 'weekly_review' && schedule.days ? 
+                          `${schedule.days.map(d => dayNames[d]).join(', ')}, ` : ''}
+                        {schedule.time}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">
-                    {scheduleTypeNames[schedule.type]}
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    {schedule.type === 'weekly_review' && schedule.days ? 
-                      `${schedule.days.map(d => dayNames[d]).join(', ')}, ` : ''}
-                    {schedule.time}
-                  </p>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium text-gray-700 min-w-0 flex-shrink-0">Время:</label>
+                    <input
+                      type="time"
+                      value={schedule.time}
+                      onChange={(e) => updateScheduleTime(index, e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      disabled={!schedule.enabled}
+                    />
+                  </div>
+                  
+                  {schedule.type === 'weekly_review' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Дни недели:</label>
+                      <div className="flex flex-wrap gap-2">
+                        {dayNames.map((day, dayIndex) => (
+                          <button
+                            key={dayIndex}
+                            onClick={() => {
+                              const currentDays = schedule.days || [];
+                              const newDays = currentDays.includes(dayIndex)
+                                ? currentDays.filter(d => d !== dayIndex)
+                                : [...currentDays, dayIndex];
+                              updateScheduleDays(index, newDays);
+                            }}
+                            disabled={!schedule.enabled}
+                            className={`min-w-[32px] h-8 rounded-full text-xs font-medium transition-colors touch-manipulation ${
+                              schedule.days?.includes(dayIndex)
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            } ${!schedule.enabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            {day}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <input
-                  type="time"
-                  value={schedule.time}
-                  onChange={(e) => updateScheduleTime(index, e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  disabled={!schedule.enabled}
-                />
-                
-                {schedule.type === 'weekly_review' && (
-                  <div className="flex space-x-1">
-                    {dayNames.map((day, dayIndex) => (
-                      <button
-                        key={dayIndex}
-                        onClick={() => {
-                          const currentDays = schedule.days || [];
-                          const newDays = currentDays.includes(dayIndex)
-                            ? currentDays.filter(d => d !== dayIndex)
-                            : [...currentDays, dayIndex];
-                          updateScheduleDays(index, newDays);
-                        }}
-                        disabled={!schedule.enabled}
-                        className={`w-8 h-8 rounded-full text-xs font-medium transition-colors ${
-                          schedule.days?.includes(dayIndex)
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        } ${!schedule.enabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        {day}
-                      </button>
-                    ))}
+              {/* Desktop Layout */}
+              <div className="hidden sm:flex sm:items-center sm:justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={schedule.enabled}
+                      onChange={() => toggleSchedule(index)}
+                      className="h-5 w-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                    />
                   </div>
-                )}
+                  <div>
+                    <h4 className="font-medium text-gray-900">
+                      {scheduleTypeNames[schedule.type]}
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {schedule.type === 'weekly_review' && schedule.days ? 
+                        `${schedule.days.map(d => dayNames[d]).join(', ')}, ` : ''}
+                      {schedule.time}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="time"
+                    value={schedule.time}
+                    onChange={(e) => updateScheduleTime(index, e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    disabled={!schedule.enabled}
+                  />
+                  
+                  {schedule.type === 'weekly_review' && (
+                    <div className="flex flex-wrap gap-1">
+                      {dayNames.map((day, dayIndex) => (
+                        <button
+                          key={dayIndex}
+                          onClick={() => {
+                            const currentDays = schedule.days || [];
+                            const newDays = currentDays.includes(dayIndex)
+                              ? currentDays.filter(d => d !== dayIndex)
+                              : [...currentDays, dayIndex];
+                            updateScheduleDays(index, newDays);
+                          }}
+                          disabled={!schedule.enabled}
+                          className={`w-8 h-8 rounded-full text-xs font-medium transition-colors ${
+                            schedule.days?.includes(dayIndex)
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          } ${!schedule.enabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {day}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -411,7 +479,7 @@ export default function ScheduledNotifications() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Дни недели
                       </label>
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
                         {dayNames.map((day, index) => (
                           <button
                             key={index}
@@ -422,7 +490,7 @@ export default function ScheduledNotifications() {
                                 : [...newNotification.days, index];
                               setNewNotification(prev => ({ ...prev, days: newDays }));
                             }}
-                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            className={`min-w-[36px] px-3 py-2 rounded-lg text-sm font-medium transition-colors touch-manipulation ${
                               newNotification.days.includes(index)
                                 ? 'bg-green-600 text-white'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
