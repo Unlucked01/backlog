@@ -27,7 +27,19 @@ def get_tasks(
         if filters.priority:
             query = query.filter(Task.priority == filters.priority)
         if filters.status:
-            query = query.filter(Task.status == filters.status)
+            # Специальная обработка для статуса "overdue"
+            if filters.status == "overdue":
+                query = query.filter(
+                    or_(
+                        Task.is_overdue == True,
+                        and_(
+                            Task.status.in_([TaskStatus.pending, TaskStatus.in_progress]),
+                            Task.deadline < datetime.utcnow()
+                        )
+                    )
+                )
+            else:
+                query = query.filter(Task.status == filters.status)
         if filters.start_date:
             query = query.filter(Task.deadline >= filters.start_date)
         if filters.end_date:

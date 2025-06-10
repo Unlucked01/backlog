@@ -39,31 +39,48 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
     }
   }, []);
 
+  const registerServiceWorker = async () => {
+    console.log('Registering push service worker...');
+    
+    try {
+      const registration = await navigator.serviceWorker.register('/push-sw.js', {
+        scope: '/'
+      });
+      
+      console.log('Push service worker registered:', registration);
+      
+      // Ждем активации
+      if (registration.installing) {
+        console.log('Service worker installing...');
+        await new Promise(resolve => {
+          registration.installing!.addEventListener('statechange', function() {
+            if (this.state === 'activated') {
+              resolve(undefined);
+            }
+          });
+        });
+      }
+      
+      return registration;
+    } catch (error) {
+      console.error('Failed to register push service worker:', error);
+      throw error;
+    }
+  };
+
   const checkSubscriptionStatus = async () => {
     console.log('Checking subscription status...');
 
     try {
-      console.log('Getting service worker registration...');
+      // Сначала попробуем получить существующую регистрацию
+      let registration = await navigator.serviceWorker.getRegistration('/');
       
-      // Проверяем, зарегистрирован ли service worker
-      if (!navigator.serviceWorker.controller) {
-        console.log('No service worker controller found, waiting for registration...');
-        
-        // Ждем регистрацию service worker с таймаутом
-        const registration = await Promise.race([
-          navigator.serviceWorker.ready,
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Service worker registration timeout')), 10000)
-          )
-        ]) as ServiceWorkerRegistration;
-        
-        console.log('Service worker ready after wait:', registration);
+      if (!registration) {
+        console.log('No service worker registration found, registering new one...');
+        registration = await registerServiceWorker();
       } else {
-        console.log('Service worker controller exists:', navigator.serviceWorker.controller);
+        console.log('Found existing service worker registration:', registration);
       }
-      
-      const registration = await navigator.serviceWorker.ready;
-      console.log('Service worker ready:', registration);
       
       console.log('Getting existing subscription...');
       const subscription = await registration.pushManager.getSubscription();
@@ -114,21 +131,18 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
         throw new Error('Разрешение на уведомления не предоставлено');
       }
 
-      // Регистрируем service worker если еще не зарегистрирован
-      console.log('Checking service worker registration...');
+      // Получаем или регистрируем service worker
+      console.log('Getting service worker registration...');
       
-      // Проверяем готовность service worker с таймаутом
-      console.log('Service worker controller:', navigator.serviceWorker.controller);
-      console.log('Service worker ready state...');
+      let registration = await navigator.serviceWorker.getRegistration('/');
       
-      const registration = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Service worker registration timeout after 15 seconds')), 15000)
-        )
-      ]) as ServiceWorkerRegistration;
+      if (!registration) {
+        console.log('No service worker found, registering new one...');
+        registration = await registerServiceWorker();
+      } else {
+        console.log('Using existing service worker registration:', registration);
+      }
       
-      console.log('Service worker registration obtained:', registration);
       console.log('Registration scope:', registration.scope);
       console.log('Registration active:', registration.active);
 
@@ -208,7 +222,13 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
 
     setIsLoading(true);
     try {
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await navigator.serviceWorker.getRegistration('/');
+      if (!registration) {
+        console.log('No service worker registration found');
+        setIsSubscribed(false);
+        return;
+      }
+      
       const subscription = await registration.pushManager.getSubscription();
 
       if (subscription) {
