@@ -1,0 +1,93 @@
+[alembic_version]
+    *version_num {label:"VARCHAR(32)"}
+[users]
+    *id {label:"INTEGER"}
+    avatar_url {label:"VARCHAR"}
+    created_at {label:"TIMESTAMP"}
+    email {label:"VARCHAR"}
+    email_notifications {label:"BOOLEAN"}
+    full_name {label:"VARCHAR"}
+    hashed_password {label:"VARCHAR"}
+    is_active {label:"BOOLEAN"}
+    is_verified {label:"BOOLEAN"}
+    updated_at {label:"TIMESTAMP"}
+[goals]
+    *id {label:"INTEGER"}
+    completed_at {label:"TIMESTAMP"}
+    created_at {label:"TIMESTAMP"}
+    current_value {label:"INTEGER"}
+    description {label:"TEXT"}
+    end_date {label:"TIMESTAMP"}
+    goal_type {label:"VARCHAR(8)"}
+    is_active {label:"BOOLEAN"}
+    is_completed {label:"BOOLEAN"}
+    start_date {label:"TIMESTAMP"}
+    target_value {label:"INTEGER"}
+    title {label:"VARCHAR"}
+    updated_at {label:"TIMESTAMP"}
+    user_id {label:"INTEGER"}
+[task_steps]
+    *id {label:"INTEGER"}
+    completed_at {label:"TIMESTAMP"}
+    created_at {label:"TIMESTAMP"}
+    description {label:"TEXT"}
+    is_completed {label:"BOOLEAN"}
+    order {label:"INTEGER"}
+    task_id {label:"INTEGER"}
+    title {label:"VARCHAR"}
+[tasks]
+    *id {label:"INTEGER"}
+    color {label:"VARCHAR(7)"}
+    completed_at {label:"TIMESTAMP"}
+    created_at {label:"TIMESTAMP"}
+    deadline {label:"TIMESTAMP"}
+    description {label:"TEXT"}
+    is_overdue {label:"BOOLEAN"}
+    is_recurring {label:"BOOLEAN"}
+    priority {label:"VARCHAR(13)"}
+    recurrence_pattern {label:"VARCHAR"}
+    status {label:"VARCHAR(11)"}
+    task_type {label:"VARCHAR(10)"}
+    title {label:"VARCHAR"}
+    updated_at {label:"TIMESTAMP"}
+    user_id {label:"INTEGER"}
+[achievements]
+    *id {label:"INTEGER"}
+    condition_type {label:"VARCHAR"}
+    condition_value {label:"INTEGER"}
+    created_at {label:"TIMESTAMP"}
+    description {label:"TEXT"}
+    icon {label:"VARCHAR"}
+    name {label:"VARCHAR"}
+    points {label:"INTEGER"}
+[user_achievements]
+    *id {label:"INTEGER"}
+    achievement_id {label:"INTEGER"}
+    earned_at {label:"TIMESTAMP"}
+    user_id {label:"INTEGER"}
+[push_subscriptions]
+    *id {label:"INTEGER"}
+    auth_key {label:"TEXT"}
+    created_at {label:"TIMESTAMP"}
+    endpoint {label:"TEXT"}
+    p256dh_key {label:"TEXT"}
+    updated_at {label:"TIMESTAMP"}
+    user_id {label:"INTEGER"}
+[notifications]
+    *id {label:"INTEGER"}
+    created_at {label:"TIMESTAMP"}
+    message {label:"TEXT"}
+    sent_at {label:"TIMESTAMP"}
+    task_id {label:"INTEGER"}
+    title {label:"VARCHAR"}
+    type {label:"VARCHAR"}
+    user_id {label:"INTEGER"}
+    was_opened {label:"BOOLEAN"}
+users."id" 1--* goals."user_id"
+tasks."id" 1--* task_steps."task_id"
+users."id" 1--* tasks."user_id"
+users."id" 1--* user_achievements."user_id"
+achievements."id" 1--* user_achievements."achievement_id"
+users."id" 1--* push_subscriptions."user_id"
+tasks."id" ?--* notifications."task_id"
+users."id" 1--* notifications."user_id"

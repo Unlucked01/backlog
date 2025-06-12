@@ -1,5 +1,6 @@
 import json
 import logging
+import base64
 from datetime import datetime, timedelta
 from typing import List, Optional
 from pywebpush import webpush, WebPushException
@@ -46,11 +47,29 @@ class NotificationService:
                 ]
             }
             
-            # pywebpush может принимать ключ в base64 формате напрямую
-            # Попробуем использовать ключ как base64 строку без декодирования
+            # Декодируем VAPID private key из base64 в PEM формат
             vapid_private_key = settings.VAPID_PRIVATE_KEY
             
-            logger.info("Trying VAPID private key as base64 string directly")
+            try:
+                # Если ключ в base64 формате, декодируем его
+                if not vapid_private_key.startswith('-----BEGIN'):
+                    logger.info("Декодирование VAPID private key из base64")
+                    # Добавляем padding если нужен
+                    padding = 4 - (len(vapid_private_key) % 4)
+                    if padding != 4:
+                        vapid_private_key += '=' * padding
+                    
+                    decoded_key = base64.urlsafe_b64decode(vapid_private_key.encode('utf-8'))
+                    vapid_private_key = decoded_key.decode('utf-8')
+                    logger.info("VAPID private key успешно декодирован")
+                else:
+                    logger.info("VAPID private key уже в PEM формате")
+                    
+            except Exception as decode_error:
+                logger.error(f"Ошибка декодирования VAPID private key: {decode_error}")
+                return False
+            
+            logger.info("Отправка push-уведомления через pywebpush")
             
             webpush(
                 subscription_info=subscription_info,
