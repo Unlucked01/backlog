@@ -152,12 +152,29 @@ def save_push_subscription(
     # Отправляем тестовое уведомление асинхронно
     import asyncio
     try:
-        asyncio.create_task(notification_service.send_push_notification(
-            user_id=current_user.id,
-            title="🎉 Уведомления включены!",
-            body="Теперь вы будете получать напоминания о дедлайнах",
-            data={'type': 'subscription_enabled', 'url': '/'}
-        ))
+        # Используем run_in_threadpool для выполнения async функции в sync контексте
+        from fastapi.concurrency import run_in_threadpool
+        import threading
+        
+        def send_notification_async():
+            """Отправка уведомления в отдельном потоке"""
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                loop.run_until_complete(notification_service.send_push_notification(
+                    user_id=current_user.id,
+                    title="🎉 Уведомления включены!",
+                    body="Теперь вы будете получать напоминания о дедлайнах",
+                    data={'type': 'subscription_enabled', 'url': '/'}
+                ))
+            finally:
+                loop.close()
+        
+        # Запускаем в отдельном потоке, чтобы не блокировать основной поток
+        thread = threading.Thread(target=send_notification_async)
+        thread.daemon = True
+        thread.start()
+        
     except Exception:
         pass  # Не блокируем регистрацию подписки из-за ошибки уведомления
     

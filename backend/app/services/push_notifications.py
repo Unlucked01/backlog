@@ -83,6 +83,12 @@ class PushNotificationService:
                 logger.error("VAPID ключи не настроены")
                 return False
             
+            # Конвертируем PEM ключ в формат для pywebpush
+            vapid_private_key_for_pywebpush = self._convert_pem_to_pywebpush_format(self.vapid_private_key)
+            if not vapid_private_key_for_pywebpush:
+                logger.error("Не удалось конвертировать VAPID ключ")
+                return False
+            
             # Подготавливаем VAPID claims
             vapid_claims = {
                 "sub": self.vapid_subject
@@ -92,7 +98,7 @@ class PushNotificationService:
             response = webpush(
                 subscription_info=subscription_info,
                 data=json.dumps(payload),
-                vapid_private_key=self.vapid_private_key,
+                vapid_private_key=vapid_private_key_for_pywebpush,
                 vapid_claims=vapid_claims
             )
             
@@ -105,6 +111,36 @@ class PushNotificationService:
         except Exception as e:
             logger.error(f"Ошибка pywebpush отправки: {e}", exc_info=True)
             return False
+    
+    def _convert_pem_to_pywebpush_format(self, pem_key: str) -> Optional[str]:
+        """Конвертирует PEM ключ в формат base64url DER для pywebpush"""
+        try:
+            # Очищаем ключ от экранированных символов
+            clean_key = pem_key.replace('\\n', '\n')
+            
+            # Загружаем PEM ключ
+            private_key = serialization.load_pem_private_key(
+                clean_key.encode(),
+                password=None,
+                backend=default_backend()
+            )
+            
+            # Конвертируем в DER формат
+            der_key = private_key.private_bytes(
+                encoding=serialization.Encoding.DER,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption()
+            )
+            
+            # Кодируем в base64url без padding
+            base64url_key = base64.urlsafe_b64encode(der_key).decode('utf-8').rstrip('=')
+            
+            logger.info("VAPID ключ успешно конвертирован в формат pywebpush")
+            return base64url_key
+            
+        except Exception as e:
+            logger.error(f"Ошибка конвертации VAPID ключа: {e}", exc_info=True)
+            return None
     
     def _create_vapid_token(self, audience: str) -> Optional[str]:
         """Создание VAPID JWT токена"""
