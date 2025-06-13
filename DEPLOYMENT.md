@@ -1,240 +1,253 @@
-# 🚀 Production Deployment Guide
+# 🚀 Deployment Guide - Student Backlog Planner
 
-Руководство по развертыванию Backlog App на сервере с доменом `unl-backlog.duckdns.org`.
+Это руководство поможет вам развернуть приложение на домене `unl-backlog.duckdns.org` с SSL сертификатами.
 
 ## 📋 Предварительные требования
 
-### На сервере должны быть установлены:
-- Docker и Docker Compose
-- Nginx
-- Certbot (для SSL)
-- Git
+1. **Сервер** с установленным Docker и Docker Compose
+2. **Домен** `unl-backlog.duckdns.org` должен указывать на IP вашего сервера
+3. **Открытые порты**:
+   - `8080` (HTTP)
+   - `8443` (HTTPS)
+   - `5433` (PostgreSQL, опционально для внешнего доступа)
 
-### Проверка установки:
-```bash
-docker --version
-docker-compose --version
-nginx -v
-certbot --version
-```
+## 🔧 Настройка портов
 
-## 🛠️ Процесс развертывания
+Приложение использует следующие порты (изменены для избежания конфликтов):
+
+- **HTTP**: `8080` (вместо стандартного 80)
+- **HTTPS**: `8443` (вместо стандартного 443)
+- **PostgreSQL**: `5433` (вместо стандартного 5432)
+
+## 📦 Быстрый деплой
 
 ### 1. Клонирование репозитория
 ```bash
-cd /var/www
-sudo git clone https://github.com/your-username/backlog.git
+git clone <repository-url>
 cd backlog
-sudo chown -R $USER:$USER .
 ```
 
-### 2. Настройка переменных окружения
+### 2. Настройка окружения
 ```bash
-# Создайте .env файл из примера
-cp env.production.example .env
+# Скопируйте пример конфигурации
+cp .env.example .env
 
-# Отредактируйте переменные
+# Отредактируйте .env файл
 nano .env
 ```
 
-**Обязательно измените:**
-- `POSTGRES_PASSWORD` - надежный пароль для БД
-- `SECRET_KEY` - случайная строка 64+ символов
-- `VK_CLIENT_ID` и `VK_CLIENT_SECRET` - если используете VK OAuth
-
-### 3. Обновление Google OAuth redirect URI
-
-В [Google Cloud Console](https://console.cloud.google.com/):
-1. Перейдите в **APIs & Services** → **Credentials**
-2. Найдите ваш OAuth 2.0 Client
-3. Добавьте в **Authorized redirect URIs**:
-   ```
-   https://unl-backlog.duckdns.org/auth/google/callback
-   ```
-
-### 4. Автоматический деплой
-```bash
-# Запустите скрипт автоматического развертывания
-./deploy.sh
+Пример `.env` файла:
+```env
+POSTGRES_PASSWORD=your_super_secure_password_here
+SECRET_KEY=your-super-secret-jwt-key-change-this-in-production
+SSL_EMAIL=your-email@example.com
+DOMAIN=unl-backlog.duckdns.org
 ```
 
-### 5. Ручное развертывание (альтернатива)
-
-Если предпочитаете ручное развертывание:
-
-#### 5.1 Nginx конфигурация
+### 3. Запуск деплоя
 ```bash
-# Копируем конфиг
-sudo cp nginx.conf /etc/nginx/sites-available/unl-backlog.duckdns.org
+# Сделайте скрипты исполняемыми
+chmod +x scripts/*.sh
 
-# Создаем символическую ссылку
-sudo ln -s /etc/nginx/sites-available/unl-backlog.duckdns.org /etc/nginx/sites-enabled/
-
-# Проверяем конфигурацию
-sudo nginx -t
+# Запустите деплой
+./scripts/deploy.sh
 ```
 
-#### 5.2 SSL сертификат
-```bash
-# Получаем SSL сертификат
-sudo certbot --nginx -d unl-backlog.duckdns.org --non-interactive --agree-tos --email admin@unl-backlog.duckdns.org
+## 🔐 Ручная настройка SSL
 
-# Настраиваем автообновление
-echo "0 12 * * * /usr/bin/certbot renew --quiet" | crontab -
+Если автоматическая настройка SSL не сработала:
+
+### 1. Запуск без SSL
+```bash
+# Запустите сервисы без nginx
+docker-compose up -d postgres backend frontend
+
+# Запустите nginx с временной конфигурацией
+docker-compose up -d nginx
 ```
 
-#### 5.3 Запуск приложения
+### 2. Получение SSL сертификата
 ```bash
-# Останавливаем существующие контейнеры
-docker-compose down
-
-# Собираем и запускаем в продакшн режиме
-docker-compose up --build -d
-
-# Перезапускаем nginx
-sudo nginx -s reload
+# Запустите инициализацию SSL
+./scripts/init-ssl.sh
 ```
 
-## 🔍 Проверка работоспособности
-
-### Проверка сервисов
+### 3. Переключение на SSL конфигурацию
 ```bash
-# Статус контейнеров
-docker-compose ps
+# Отключите временную конфигурацию
+mv nginx/conf.d/backlog-init.conf nginx/conf.d/backlog-init.conf.disabled
 
-# Логи приложения
-docker-compose logs -f
-
-# Проверка портов
-ss -tlnp | grep -E "(3001|8001|5433)"
+# Перезапустите nginx
+docker-compose restart nginx
 ```
 
-### Проверка веб-доступности
-```bash
-# Проверка frontend
-curl -I http://localhost:3001
-
-# Проверка backend API
-curl -I http://localhost:8001/api/v1/health
-
-# Проверка HTTPS
-curl -I https://unl-backlog.duckdns.org
-```
-
-## 🔧 Управление приложением
+## 🛠️ Управление сервисами
 
 ### Основные команды
 ```bash
+# Просмотр статуса сервисов
+docker-compose ps
+
 # Просмотр логов
-docker-compose logs -f [service_name]
+docker-compose logs -f
 
-# Перезапуск сервиса
-docker-compose restart [service_name]
+# Просмотр логов конкретного сервиса
+docker-compose logs -f backend
+docker-compose logs -f frontend
+docker-compose logs -f nginx
 
-# Остановка приложения
+# Перезапуск сервисов
+docker-compose restart
+
+# Остановка сервисов
 docker-compose down
 
-# Запуск приложения
+# Полная пересборка
+docker-compose build --no-cache
 docker-compose up -d
-
-# Обновление приложения
-git pull
-docker-compose down
-docker-compose up --build -d
 ```
 
-### Резервное копирование БД
+### SSL управление
 ```bash
-# Создание бэкапа
-docker-compose exec postgres pg_dump -U postgres student_planner > backup_$(date +%Y%m%d_%H%M%S).sql
+# Обновление SSL сертификатов
+docker-compose exec certbot certbot renew
 
-# Восстановление из бэкапа
-docker-compose exec -T postgres psql -U postgres student_planner < backup_file.sql
+# Проверка статуса сертификатов
+docker-compose exec certbot certbot certificates
+
+# Принудительное обновление сертификата
+docker-compose run --rm certbot certbot renew --force-renewal
 ```
 
-## 🔐 Безопасность
+## 🌐 Доступ к приложению
 
-### Настройка файрволла
+После успешного деплоя приложение будет доступно по адресам:
+
+- **HTTP**: http://unl-backlog.duckdns.org:8080
+- **HTTPS**: https://unl-backlog.duckdns.org:8443
+
+> **Примечание**: HTTP автоматически перенаправляется на HTTPS
+
+## 🔍 Диагностика проблем
+
+### Проверка DNS
 ```bash
-# Разрешаем только необходимые порты
-sudo ufw allow 22/tcp      # SSH
-sudo ufw allow 80/tcp      # HTTP
-sudo ufw allow 443/tcp     # HTTPS
-sudo ufw enable
+# Проверьте, что домен указывает на ваш сервер
+nslookup unl-backlog.duckdns.org
+dig unl-backlog.duckdns.org
 ```
 
-### Регулярные обновления
+### Проверка портов
 ```bash
-# Обновление системы
-sudo apt update && sudo apt upgrade -y
+# Проверьте, что порты открыты
+netstat -tlnp | grep :8080
+netstat -tlnp | grep :8443
+```
 
-# Обновление Docker образов
-docker-compose pull
-docker-compose up -d
+### Проверка SSL сертификата
+```bash
+# Проверьте SSL сертификат
+openssl s_client -connect unl-backlog.duckdns.org:8443 -servername unl-backlog.duckdns.org
+```
+
+### Логи для диагностики
+```bash
+# Логи nginx
+docker-compose logs nginx
+
+# Логи certbot
+docker-compose logs certbot
+
+# Логи backend
+docker-compose logs backend
+
+# Логи всех сервисов
+docker-compose logs
+```
+
+## 🔧 Настройка firewall
+
+### Ubuntu/Debian (ufw)
+```bash
+sudo ufw allow 8080/tcp
+sudo ufw allow 8443/tcp
+sudo ufw allow 5433/tcp  # Если нужен внешний доступ к БД
+```
+
+### CentOS/RHEL (firewalld)
+```bash
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --permanent --add-port=8443/tcp
+sudo firewall-cmd --permanent --add-port=5433/tcp
+sudo firewall-cmd --reload
 ```
 
 ## 📊 Мониторинг
 
-### Логи nginx
+### Проверка здоровья сервисов
 ```bash
-sudo tail -f /var/log/nginx/access.log
-sudo tail -f /var/log/nginx/error.log
+# Проверка API
+curl -k https://unl-backlog.duckdns.org:8443/api/v1/health
+
+# Проверка frontend
+curl -k https://unl-backlog.duckdns.org:8443/
+
+# Проверка базы данных
+docker-compose exec postgres pg_isready -U backlog_user
 ```
 
 ### Мониторинг ресурсов
 ```bash
-# Использование CPU/RAM контейнерами
+# Использование ресурсов контейнерами
 docker stats
 
-# Место на диске
-df -h
+# Использование дискового пространства
 docker system df
 ```
 
-## 🆘 Устранение неполадок
+## 🔄 Обновление приложения
 
-### Проблемы с SSL
 ```bash
-# Проверка сертификата
-sudo certbot certificates
+# Остановите сервисы
+docker-compose down
 
-# Принудительное обновление
-sudo certbot renew --force-renewal
-```
+# Обновите код
+git pull
 
-### Проблемы с Docker
-```bash
-# Очистка неиспользуемых ресурсов
-docker system prune -a
-
-# Пересборка без кэша
+# Пересоберите и запустите
 docker-compose build --no-cache
+docker-compose up -d
 ```
 
-### Проблемы с базой данных
+## 🆘 Восстановление
+
+### Бэкап базы данных
 ```bash
-# Подключение к БД
-docker-compose exec postgres psql -U postgres student_planner
+# Создание бэкапа
+docker-compose exec postgres pg_dump -U backlog_user student_planner > backup.sql
 
-# Проверка таблиц
-\dt
+# Восстановление из бэкапа
+docker-compose exec -T postgres psql -U backlog_user student_planner < backup.sql
+```
 
-# Выход
-\q
+### Сброс SSL сертификатов
+```bash
+# Удалите существующие сертификаты
+sudo rm -rf certbot/conf/live/unl-backlog.duckdns.org
+sudo rm -rf certbot/conf/archive/unl-backlog.duckdns.org
+sudo rm -rf certbot/conf/renewal/unl-backlog.duckdns.org.conf
+
+# Запустите инициализацию SSL заново
+./scripts/init-ssl.sh
 ```
 
 ## 📞 Поддержка
 
 При возникновении проблем:
-1. Проверьте логи: `docker-compose logs -f`
-2. Проверьте статус сервисов: `docker-compose ps`
-3. Проверьте конфигурацию nginx: `sudo nginx -t`
-4. Проверьте SSL сертификаты: `sudo certbot certificates`
 
-## 🔄 CI/CD (Опционально)
+1. Проверьте логи сервисов
+2. Убедитесь, что DNS настроен правильно
+3. Проверьте, что порты открыты
+4. Убедитесь, что SSL сертификаты действительны
 
-Для автоматического деплоя при пуше в репозиторий:
-
-1. Настройте GitHub Actions или GitLab CI
-2. Используйте webhook для автоматического обновления
-3. Настройте мониторинг статуса деплоя 
+Для получения помощи создайте issue с подробным описанием проблемы и логами. 
