@@ -58,91 +58,30 @@ class PushNotificationService:
                 'data': data or {}
             }
             
-            # Пробуем несколько методов отправки
-            success = False
-            
-            # Метод 1: Прямой HTTP запрос к FCM
-            if subscription_info['endpoint'].startswith('https://fcm.googleapis.com'):
-                success = await self._send_via_fcm_http(subscription_info, payload)
-                if success:
-                    logger.info("Уведомление успешно отправлено через FCM HTTP")
-                    return True
-            
-            # Метод 2: pywebpush (резервный)
+            # Используем только pywebpush для всех типов уведомлений
             success = await self._send_via_pywebpush(subscription_info, payload)
             if success:
                 logger.info("Уведомление успешно отправлено через pywebpush")
                 return True
             
-            logger.error("Все методы отправки уведомления не удались")
+            logger.error("Не удалось отправить уведомление")
             return False
             
         except Exception as e:
             logger.error(f"Ошибка отправки уведомления: {e}", exc_info=True)
             return False
-    
-    async def _send_via_fcm_http(self, subscription_info: Dict, payload: Dict) -> bool:
-        """Отправка через прямой HTTP запрос к FCM"""
-        try:
-            # Извлекаем FCM token из endpoint
-            endpoint = subscription_info['endpoint']
-            if not endpoint.startswith('https://fcm.googleapis.com/fcm/send/'):
-                return False
-                
-            fcm_token = endpoint.replace('https://fcm.googleapis.com/fcm/send/', '')
-            
-            # Создаем VAPID токен
-            vapid_token = self._create_vapid_token(endpoint)
-            if not vapid_token:
-                logger.error("Не удалось создать VAPID токен")
-                return False
-            
-            # Подготавливаем headers
-            headers = {
-                'Authorization': f'vapid t={vapid_token}, k={self.vapid_public_key}',
-                'Content-Type': 'application/json',
-                'TTL': '86400'
-            }
-            
-            # Подготавливаем FCM payload
-            fcm_payload = {
-                'to': fcm_token,
-                'notification': {
-                    'title': payload['title'],
-                    'body': payload['body'],
-                    'icon': payload['icon'],
-                    'badge': payload['badge'],
-                    'tag': payload['tag']
-                },
-                'data': payload.get('data', {})
-            }
-            
-            # Отправляем запрос
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    'https://fcm.googleapis.com/fcm/send',
-                    json=fcm_payload,
-                    headers=headers,
-                    timeout=30.0
-                )
-                
-                if response.status_code == 200:
-                    logger.info(f"FCM HTTP ответ: {response.status_code}")
-                    return True
-                else:
-                    logger.error(f"FCM HTTP ошибка: {response.status_code}, {response.text}")
-                    return False
-                    
-        except Exception as e:
-            logger.error(f"Ошибка FCM HTTP отправки: {e}", exc_info=True)
-            return False
-    
+
     async def _send_via_pywebpush(self, subscription_info: Dict, payload: Dict) -> bool:
-        """Отправка через pywebpush (резервный метод)"""
+        """Отправка через pywebpush"""
         try:
             from pywebpush import webpush, WebPushException
             
             logger.info("Попытка отправки через pywebpush")
+            
+            # Проверяем наличие VAPID ключей
+            if not self.vapid_private_key or not self.vapid_public_key:
+                logger.error("VAPID ключи не настроены")
+                return False
             
             # Подготавливаем VAPID claims
             vapid_claims = {
