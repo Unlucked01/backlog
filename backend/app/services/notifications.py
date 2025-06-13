@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from pywebpush import webpush, WebPushException
 from sqlalchemy.orm import Session
+from cryptography.hazmat.primitives import serialization
 
 from ..core.config import settings
 from ..schemas.user import PushNotification
@@ -60,6 +61,31 @@ class NotificationService:
                 vapid_private_key = vapid_private_key.replace('\\n', '\n')
                 logger.info("Заменили экранированные \\n на реальные переносы строк")
                 logger.info(f"Обновленный ключ starts with: {repr(vapid_private_key[:50])}")
+            
+            # Попытка 4: Использование объекта ключа через cryptography
+            try:
+                logger.info("Попытка 4: Создание объекта ключа через cryptography")
+                
+                # Создаем объект приватного ключа
+                private_key_obj = serialization.load_pem_private_key(
+                    vapid_private_key.encode('utf-8'),
+                    password=None
+                )
+                
+                # Пытаемся передать объект ключа
+                webpush(
+                    subscription_info=subscription_info,
+                    data=json.dumps(payload),
+                    vapid_private_key=private_key_obj,
+                    vapid_claims={
+                        "sub": settings.VAPID_SUBJECT
+                    }
+                )
+                logger.info("✅ Успешно отправлено с объектом ключа!")
+                return True
+                
+            except Exception as e4:
+                logger.error(f"Попытка 4 неудачна: {e4}")
             
             # Пробуем разные варианты передачи ключа
             try:
