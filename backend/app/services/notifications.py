@@ -55,6 +55,12 @@ class NotificationService:
             logger.info(f"VAPID private key length: {len(vapid_private_key)}")
             logger.info(f"VAPID private key starts with: {vapid_private_key[:50]}...")
             
+            # ИСПРАВЛЕНИЕ: заменяем экранированные \n на реальные переносы строк
+            if '\\n' in vapid_private_key:
+                vapid_private_key = vapid_private_key.replace('\\n', '\n')
+                logger.info("Заменили экранированные \\n на реальные переносы строк")
+                logger.info(f"Обновленный ключ starts with: {repr(vapid_private_key[:50])}")
+            
             # Пробуем разные варианты передачи ключа
             try:
                 logger.info("Попытка 1: Использование ключа как есть")
