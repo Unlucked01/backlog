@@ -10,8 +10,9 @@ from jwt import encode as jwt_encode
 from datetime import datetime, timedelta, timezone
 import os
 
-from app.database import get_db
-from app.models import User, PushSubscription
+from ..db.session import get_db
+from ..db.models.user import User
+from ..db.models.push_subscription import PushSubscription
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +42,8 @@ class PushNotificationService:
                 subscription_info = {
                     'endpoint': subscription.endpoint,
                     'keys': {
-                        'p256dh': subscription.p256dh,
-                        'auth': subscription.auth
+                        'p256dh': subscription.p256dh_key,
+                        'auth': subscription.auth_key
                     }
                 }
             

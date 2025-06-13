@@ -2,9 +2,10 @@ import logging
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 
-from app.database import get_db
-from app.models import User, PushSubscription
-from app.services.push_notifications import push_service
+from ..db.session import get_db
+from ..db.models.user import User
+from ..db.models.push_subscription import PushSubscription
+from .push_notifications import push_service
 
 logger = logging.getLogger(__name__)
 
