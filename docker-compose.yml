@@ -46,9 +46,9 @@ services:
       - FRONTEND_URL=http://localhost:3000
       - BACKEND_URL=http://localhost:8000
       
-      # VAPID Keys for Push Notifications - будут сгенерированы на сервере
-      - VAPID_PRIVATE_KEY=
-      - VAPID_PUBLIC_KEY=
+      # VAPID Keys for Push Notifications - сгенерированы на сервере
+      - VAPID_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgscxeFYgIMyVVpVuW\nwCq3FxSMJugzx0hDZTF3sO3W46+hRANCAAR0FzNrgl/hkUbQboUJDLfgPf6xG549\nD/6qFk22Cou4GhrNM3g/Hn1Ns0pFXex6n8BQvAPjv25dIz9jcK3ZtDvL\n-----END PRIVATE KEY-----
+      - VAPID_PUBLIC_KEY=BHQXM2uCX-GRRtBuhQkMt-A9_rEbnj0P_qoWTbYKi7gaGs0zeD8efU2zSkVd7HqfwFC8A-O_bl0jP2Nwrdm0O8s
       - VAPID_SUBJECT=mailto:admin@localhost
       
     volumes:
@@ -62,21 +62,21 @@ services:
       - backlog_network
     restart: unless-stopped
 
-  # Frontend для разработки
+  # Frontend
   frontend:
     build: 
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.prod
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+        NEXT_PUBLIC_FRONTEND_URL: http://localhost:3000
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY: BHQXM2uCX-GRRtBuhQkMt-A9_rEbnj0P_qoWTbYKi7gaGs0zeD8efU2zSkVd7HqfwFC8A-O_bl0jP2Nwrdm0O8s
     container_name: backlog_frontend
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://localhost:8000
       - NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
-      - NEXT_PUBLIC_VAPID_PUBLIC_KEY=  # Будет заполнен после генерации ключей
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+      - NEXT_PUBLIC_VAPID_PUBLIC_KEY=BHQXM2uCX-GRRtBuhQkMt-A9_rEbnj0P_qoWTbYKi7gaGs0zeD8efU2zSkVd7HqfwFC8A-O_bl0jP2Nwrdm0O8s
     ports:
       - "3000:3000"
     depends_on:
