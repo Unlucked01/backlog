@@ -9,7 +9,7 @@ python-multipart==0.0.6
 email-validator==2.1.0
 pydantic[email]==2.5.0
 python-dotenv==1.0.0
-pywebpush==1.14.0
+pywebpush==1.14.1
 requests==2.31.0
 pytest==7.4.3
 pytest-asyncio==0.21.1
@@ -20,3 +20,4 @@ authlib==1.2.1
 itsdangerous==2.1.2
 # Enhanced push notifications
 cryptography==41.0.7
+PyJWT==2.8.0

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from ..db.session import SessionLocal
 from ..db.models.task import Task
 from ..db.models.user import User
-from .notifications import NotificationService
+from .notifications import notification_service
 from .task_status import TaskStatusService
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class BackgroundTaskService:
             pass  # Не закрываем здесь, закроем в finally каждой задачи
     
     @staticmethod
-    def check_deadline_reminders():
+    async def check_deadline_reminders():
         """Проверяет и отправляет напоминания о дедлайнах"""
         db = BackgroundTaskService.get_db()
         try:
@@ -63,10 +63,14 @@ class BackgroundTaskService:
 
             # Отправляем напоминания
             for task in tasks_to_notify:
-                if NotificationService.send_deadline_reminder(
-                    db, task.user_id, task.title, task.deadline, task.id
-                ):
-                    sent_count += 1
+                try:
+                    success = await notification_service.send_deadline_notification(
+                        task.user_id, task.title, task.deadline
+                    )
+                    if success:
+                        sent_count += 1
+                except Exception as e:
+                    logger.error(f"Ошибка отправки напоминания о дедлайне для задачи {task.id}: {e}")
             
             if sent_count > 0:
                 logger.info(f"Отправлено {sent_count} напоминаний о дедлайнах")
@@ -77,7 +81,7 @@ class BackgroundTaskService:
             db.close()
     
     @staticmethod
-    def check_overdue_tasks():
+    async def check_overdue_tasks():
         """Проверяет и отправляет уведомления о просроченных задачах"""
         db = BackgroundTaskService.get_db()
         try:
@@ -99,10 +103,19 @@ class BackgroundTaskService:
 
                 days_overdue = (now - deadline).days
                 if days_overdue > 0:  # Только если прошел минимум 1 день
-                    if NotificationService.send_overdue_reminder(
-                        db, task.user_id, task.title, days_overdue, task.id
-                    ):
-                        sent_count += 1
+                    try:
+                        # Отправляем уведомление о просроченной задаче
+                        title = f"⚠️ Задача просрочена на {days_overdue} дн."
+                        body = f"{task.title} - проверьте статус выполнения"
+                        data = {'type': 'overdue', 'task_id': task.id, 'days_overdue': days_overdue}
+                        
+                        success = await notification_service.send_push_notification(
+                            task.user_id, title, body, data
+                        )
+                        if success:
+                            sent_count += 1
+                    except Exception as e:
+                        logger.error(f"Ошибка отправки уведомления о просрочке для задачи {task.id}: {e}")
             
             if sent_count > 0:
                 logger.info(f"Отправлено {sent_count} напоминаний о просроченных задачах")
@@ -113,7 +126,7 @@ class BackgroundTaskService:
             db.close()
     
     @staticmethod
-    def send_daily_summaries():
+    async def send_daily_summaries():
         """Отправляет ежедневные сводки пользователям"""
         db = BackgroundTaskService.get_db()
         try:
@@ -150,10 +163,14 @@ class BackgroundTaskService:
                     Task.status != 'completed'
                 ).count()
                 
-                if NotificationService.send_daily_summary(
-                    db, user.id, total_tasks, completed_tasks, overdue_tasks
-                ):
-                    sent_count += 1
+                try:
+                    success = await notification_service.send_daily_summary(
+                        user.id, total_tasks, completed_tasks
+                    )
+                    if success:
+                        sent_count += 1
+                except Exception as e:
+                    logger.error(f"Ошибка отправки ежедневной сводки для пользователя {user.id}: {e}")
             
             if sent_count > 0:
                 logger.info(f"Отправлено {sent_count} ежедневных сводок")
@@ -176,17 +193,17 @@ class BackgroundTaskService:
                     logger.info(f"Обновлено статусов просрочки: {updated_count}")
                 
                 # Проверяем напоминания о дедлайнах каждые 15 минут
-                BackgroundTaskService.check_deadline_reminders()
+                await BackgroundTaskService.check_deadline_reminders()
                 
                 # Проверяем просроченные задачи каждый час
                 current_minute = datetime.now(timezone.utc).minute
                 if current_minute == 0:  # Каждый час в :00
-                    BackgroundTaskService.check_overdue_tasks()
+                    await BackgroundTaskService.check_overdue_tasks()
                 
                 # Отправляем ежедневные сводки в 9:00 UTC
                 current_time = datetime.now(timezone.utc).time()
                 if current_time.hour == 9 and current_time.minute == 0:
-                    BackgroundTaskService.send_daily_summaries()
+                    await BackgroundTaskService.send_daily_summaries()
                 
                 # Ждем 1 минуту до следующей проверки
                 await asyncio.sleep(60)

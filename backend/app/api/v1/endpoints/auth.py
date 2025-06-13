@@ -11,7 +11,7 @@ from ....schemas.user import (
     User, UserCreate, Token, UserLogin, PasswordChange, PushSubscription,
     PushNotification
 )
-from ....services.notifications import NotificationService
+from ....services.notifications import notification_service
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
@@ -149,39 +149,30 @@ def save_push_subscription(
     if not success:
         raise HTTPException(status_code=400, detail="Ошибка сохранения подписки")
     
-    # Отправляем тестовое уведомление
-    test_notification = PushNotification(
-        title="🎉 Уведомления включены!",
-        body="Теперь вы будете получать напоминания о дедлайнах",
-        url="/",
-        tag="push-enabled"
-    )
-    NotificationService.send_notification_to_user(db, current_user.id, test_notification)
+    # Отправляем тестовое уведомление асинхронно
+    import asyncio
+    try:
+        asyncio.create_task(notification_service.send_push_notification(
+            user_id=current_user.id,
+            title="🎉 Уведомления включены!",
+            body="Теперь вы будете получать напоминания о дедлайнах",
+            data={'type': 'subscription_enabled', 'url': '/'}
+        ))
+    except Exception:
+        pass  # Не блокируем регистрацию подписки из-за ошибки уведомления
     
     return {"message": "Push-подписка сохранена"}
 
 
 @router.post("/test-notification")
-def send_test_notification(
+async def send_test_notification(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
     """
     Отправить тестовое уведомление (для разработки)
     """
-    if not settings.DEBUG:
-        raise HTTPException(status_code=404, detail="Не найдено")
-    
-    test_notification = PushNotification(
-        title="🧪 Тестовое уведомление",
-        body="Это тестовое push-уведомление для проверки работы системы",
-        url="/",
-        tag="test"
-    )
-    
-    success = NotificationService.send_notification_to_user(
-        db, current_user.id, test_notification
-    )
+    success = await notification_service.send_test_notification(current_user.id)
     
     if success:
         return {"message": "Тестовое уведомление отправлено"}
