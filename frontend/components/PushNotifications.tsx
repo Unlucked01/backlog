@@ -8,8 +8,8 @@ interface PushNotificationsProps {
   className?: string;
 }
 
-// Используем VAPID ключ из переменных окружения, а если не найден - fallback на тестовый
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BOoVwPyieVNwfox5C4M9al_fXCzBcyi0F3HWkZDToi_ropK_8-2lnBcCQmlffiVY87ffISUseyAxSaKxeRAinOQ';
+// Используем VAPID ключ из переменных окружения, а если не найден - fallback на новый ключ
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BNGwOxp-wOZP4FpqWTvdyhJPxXtGZa8v3xyno9j_tvLUpasvDfsz7vzJNp65lXcgM4zFYp_rVYfRnSxI3XUs1Lo';
 
 export default function PushNotifications({ className = '' }: PushNotificationsProps) {
   const [isSupported, setIsSupported] = useState(false);

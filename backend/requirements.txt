@@ -21,3 +21,4 @@ itsdangerous==2.1.2
 # Enhanced push notifications
 cryptography==41.0.7
 PyJWT==2.8.0
+dnspython==2.4.2

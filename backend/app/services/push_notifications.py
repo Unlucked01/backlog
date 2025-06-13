@@ -2,6 +2,8 @@ import json
 import logging
 import base64
 import httpx
+import socket
+import dns.resolver
 from typing import Optional, Dict, Any
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -21,6 +23,9 @@ class PushNotificationService:
         self.vapid_private_key = os.getenv('VAPID_PRIVATE_KEY', '')
         self.vapid_public_key = os.getenv('VAPID_PUBLIC_KEY', '')
         self.vapid_subject = os.getenv('VAPID_SUBJECT', 'mailto:admin@example.com')
+        
+        # Логируем статус VAPID ключей при инициализации
+        logger.info(f"VAPID ключи: приватный={'✅ найден' if self.vapid_private_key else '❌ отсутствует'}, публичный={'✅ найден' if self.vapid_public_key else '❌ отсутствует'}")
         
     async def send_notification(self, user_id: int, title: str, body: str, data: Optional[Dict[str, Any]] = None) -> bool:
         """Отправка push-уведомления пользователю"""
@@ -47,6 +52,12 @@ class PushNotificationService:
                     }
                 }
             
+            # Проверяем сетевое подключение
+            network_ok = await self._check_network_connectivity()
+            if not network_ok:
+                logger.error("Сетевое подключение недоступно")
+                return False
+            
             # Подготавливаем payload
             payload = {
                 'title': title,
@@ -58,113 +69,102 @@ class PushNotificationService:
                 'data': data or {}
             }
             
-            # Пробуем несколько методов отправки
-            success = False
-            
-            # Метод 1: Прямой HTTP запрос к FCM
-            if subscription_info['endpoint'].startswith('https://fcm.googleapis.com'):
-                success = await self._send_via_fcm_http(subscription_info, payload)
-                if success:
-                    logger.info("Уведомление успешно отправлено через FCM HTTP")
-                    return True
-            
-            # Метод 2: pywebpush (резервный)
+            # Пробуем только pywebpush (более надежный метод)
             success = await self._send_via_pywebpush(subscription_info, payload)
             if success:
                 logger.info("Уведомление успешно отправлено через pywebpush")
                 return True
             
-            logger.error("Все методы отправки уведомления не удались")
+            logger.error("Отправка уведомления не удалась")
             return False
             
         except Exception as e:
             logger.error(f"Ошибка отправки уведомления: {e}", exc_info=True)
             return False
     
-    async def _send_via_fcm_http(self, subscription_info: Dict, payload: Dict) -> bool:
-        """Отправка через прямой HTTP запрос к FCM"""
+    async def _check_network_connectivity(self) -> bool:
+        """Проверяем сетевое подключение к внешним серверам"""
         try:
-            # Извлекаем FCM token из endpoint
-            endpoint = subscription_info['endpoint']
-            if not endpoint.startswith('https://fcm.googleapis.com/fcm/send/'):
-                return False
-                
-            fcm_token = endpoint.replace('https://fcm.googleapis.com/fcm/send/', '')
-            
-            # Создаем VAPID токен
-            vapid_token = self._create_vapid_token(endpoint)
-            if not vapid_token:
-                logger.error("Не удалось создать VAPID токен")
+            # Проверяем DNS разрешение
+            try:
+                dns.resolver.resolve('google.com', 'A')
+                logger.info("✅ DNS разрешение работает")
+            except Exception as e:
+                logger.error(f"❌ DNS разрешение не работает: {e}")
                 return False
             
-            # Подготавливаем headers
-            headers = {
-                'Authorization': f'vapid t={vapid_token}, k={self.vapid_public_key}',
-                'Content-Type': 'application/json',
-                'TTL': '86400'
-            }
-            
-            # Подготавливаем FCM payload
-            fcm_payload = {
-                'to': fcm_token,
-                'notification': {
-                    'title': payload['title'],
-                    'body': payload['body'],
-                    'icon': payload['icon'],
-                    'badge': payload['badge'],
-                    'tag': payload['tag']
-                },
-                'data': payload.get('data', {})
-            }
-            
-            # Отправляем запрос
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    'https://fcm.googleapis.com/fcm/send',
-                    json=fcm_payload,
-                    headers=headers,
-                    timeout=30.0
-                )
-                
-                if response.status_code == 200:
-                    logger.info(f"FCM HTTP ответ: {response.status_code}")
-                    return True
-                else:
-                    logger.error(f"FCM HTTP ошибка: {response.status_code}, {response.text}")
+            # Проверяем HTTP подключение
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                try:
+                    response = await client.get('https://httpbin.org/get')
+                    if response.status_code == 200:
+                        logger.info("✅ HTTP подключение к внешним серверам работает")
+                        return True
+                    else:
+                        logger.error(f"❌ HTTP подключение вернуло статус: {response.status_code}")
+                        return False
+                except Exception as e:
+                    logger.error(f"❌ HTTP подключение не работает: {e}")
                     return False
                     
         except Exception as e:
-            logger.error(f"Ошибка FCM HTTP отправки: {e}", exc_info=True)
+            logger.error(f"❌ Ошибка проверки сетевого подключения: {e}")
             return False
     
     async def _send_via_pywebpush(self, subscription_info: Dict, payload: Dict) -> bool:
-        """Отправка через pywebpush (резервный метод)"""
+        """Отправка через pywebpush (основной метод)"""
         try:
             from pywebpush import webpush, WebPushException
             
             logger.info("Попытка отправки через pywebpush")
+            logger.info(f"Endpoint: {subscription_info['endpoint'][:50]}...")
+            logger.info(f"VAPID subject: {self.vapid_subject}")
+            
+            # Проверяем формат приватного ключа
+            if not self.vapid_private_key.startswith('-----BEGIN PRIVATE KEY-----'):
+                logger.error("❌ VAPID приватный ключ не в PEM формате")
+                return False
             
             # Подготавливаем VAPID claims
             vapid_claims = {
                 "sub": self.vapid_subject
             }
             
+            logger.info(f"Отправляем payload: {json.dumps(payload, ensure_ascii=False)[:100]}...")
+            
             # Отправляем уведомление
             response = webpush(
                 subscription_info=subscription_info,
                 data=json.dumps(payload),
                 vapid_private_key=self.vapid_private_key,
-                vapid_claims=vapid_claims
+                vapid_claims=vapid_claims,
+                timeout=30
             )
             
-            logger.info(f"pywebpush ответ: {response}")
+            logger.info(f"✅ pywebpush ответ: {response}")
             return True
             
         except WebPushException as e:
-            logger.error(f"WebPushException: {e}", exc_info=True)
+            logger.error(f"❌ WebPushException: {e}", exc_info=True)
+            
+            # Подробная диагностика ошибок WebPush
+            if hasattr(e, 'response') and e.response:
+                logger.error(f"WebPush response status: {e.response.status_code}")
+                logger.error(f"WebPush response text: {e.response.text}")
+            
             return False
         except Exception as e:
-            logger.error(f"Ошибка pywebpush отправки: {e}", exc_info=True)
+            logger.error(f"❌ Ошибка pywebpush отправки: {e}", exc_info=True)
+            
+            # Проверяем конкретные типы ошибок
+            error_str = str(e)
+            if "Could not deserialize key data" in error_str:
+                logger.error("🔑 Проблема с форматом VAPID ключей - проверьте их корректность")
+            elif "header too long" in error_str:
+                logger.error("📏 Проблема с длиной заголовка VAPID ключа")
+            elif "Connection" in error_str:
+                logger.error("🌐 Сетевая проблема - проверьте интернет-соединение")
+            
             return False
     
     def _create_vapid_token(self, audience: str) -> Optional[str]:
@@ -184,8 +184,9 @@ class PushNotificationService:
                     password=None,
                     backend=default_backend()
                 )
+                logger.info("✅ VAPID приватный ключ успешно загружен")
             except Exception as e:
-                logger.error(f"Ошибка загрузки VAPID ключа: {e}")
+                logger.error(f"❌ Ошибка загрузки VAPID ключа: {e}")
                 return None
             
             # Создаем claims
@@ -203,10 +204,11 @@ class PushNotificationService:
                 algorithm='ES256'
             )
             
+            logger.info("✅ VAPID токен успешно создан")
             return token
             
         except Exception as e:
-            logger.error(f"Ошибка создания VAPID токена: {e}", exc_info=True)
+            logger.error(f"❌ Ошибка создания VAPID токена: {e}", exc_info=True)
             return None
     
     async def send_test_notification(self, user_id: int) -> bool:
