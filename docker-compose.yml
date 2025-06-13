@@ -47,8 +47,8 @@ services:
       - BACKEND_URL=https://unl-backlog.duckdns.org
       
       # VAPID Keys for Push Notifications
-      - VAPID_PRIVATE_KEY=LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JR0hBZ0VBTUJNR0J5cUdTTTQ5QWdFR0NDcUdTTTQ5QXdFSEJHMHdhd0lCQVFRZzVlN0thc0JDT2tKT3ZGdjAKcktIR0pnSG1TWDUvT1lRa3ROT1RUSTY2ZTR1aFJBTkNBQVFaSEthZnpaREZseCtqWnRWUzlnWkJabFhSU0lrCkpJL1EzSVpQZjFEZTRhS0hGcUJiV2ZZcWxCVG9WNWxQSjFYb25wWXltTi9BKzRUQjZBakxUOFl6Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
-      - VAPID_PUBLIC_KEY=BBkcpp_NkMWXH6uNm1VL2BkFmVdFIiQkj9Dchk9_UN7hoocWoFtZ9iqUFOhXmU8nVeieljKY38D7hMHoCMtPxjM
+      - VAPID_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQguTZYw06dfc8DKWas\n6SGffWI4cZINgWiz3CL/5o4jmG6hRANCAAS/2PxOpMGZC6iRs3S6RtchF+hb2ygQ\nibLtClEuhkp1fsAgm6SJBj3MY8cLErNxWDK6jDYb0KbmlwQ+BV3pQcL3\n-----END PRIVATE KEY-----
+      - VAPID_PUBLIC_KEY=BL_Y_E6kwZkLqJGzdLpG1yEX6FvbKBCJsu0KUS6GSnV-wCCbpIkGPcxjxwsSs3FYMrqMNhvQpuaXBD4FXelBwvc
       - VAPID_SUBJECT=mailto:admin@unl-backlog.duckdns.org
       
     volumes:
@@ -70,13 +70,13 @@ services:
       args:
         NEXT_PUBLIC_API_URL: https://unl-backlog.duckdns.org
         NEXT_PUBLIC_FRONTEND_URL: https://unl-backlog.duckdns.org
-        NEXT_PUBLIC_VAPID_PUBLIC_KEY: BBkcpp_NkMWXH6uNm1VL2BkFmVdFIiQkj9Dchk9_UN7hoocWoFtZ9iqUFOhXmU8nVeieljKY38D7hMHoCMtPxjM
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY: BL_Y_E6kwZkLqJGzdLpG1yEX6FvbKBCJsu0KUS6GSnV-wCCbpIkGPcxjxwsSs3FYMrqMNhvQpuaXBD4FXelBwvc
     container_name: backlog_frontend
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=https://unl-backlog.duckdns.org
       - NEXT_PUBLIC_FRONTEND_URL=https://unl-backlog.duckdns.org
-      - NEXT_PUBLIC_VAPID_PUBLIC_KEY=BBkcpp_NkMWXH6uNm1VL2BkFmVdFIiQkj9Dchk9_UN7hoocWoFtZ9iqUFOhXmU8nVeieljKY38D7hMHoCMtPxjM
+      - NEXT_PUBLIC_VAPID_PUBLIC_KEY=BL_Y_E6kwZkLqJGzdLpG1yEX6FvbKBCJsu0KUS6GSnV-wCCbpIkGPcxjxwsSs3FYMrqMNhvQpuaXBD4FXelBwvc
     ports:
       - "3010:3000"
     depends_on:

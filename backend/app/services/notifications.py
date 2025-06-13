@@ -47,39 +47,82 @@ class NotificationService:
                 ]
             }
             
-            # Декодируем VAPID private key из base64 в PEM формат
+            # Новый подход: используем ключи без декодирования
             vapid_private_key = settings.VAPID_PRIVATE_KEY
             
+            # Логируем информацию о ключе для диагностики
+            logger.info(f"VAPID private key type: {type(vapid_private_key)}")
+            logger.info(f"VAPID private key length: {len(vapid_private_key)}")
+            logger.info(f"VAPID private key starts with: {vapid_private_key[:50]}...")
+            
+            # Пробуем разные варианты передачи ключа
             try:
-                # Если ключ в base64 формате, декодируем его
-                if not vapid_private_key.startswith('-----BEGIN'):
-                    logger.info("Декодирование VAPID private key из base64")
-                    # Добавляем padding если нужен
-                    padding = 4 - (len(vapid_private_key) % 4)
-                    if padding != 4:
-                        vapid_private_key += '=' * padding
+                logger.info("Попытка 1: Использование ключа как есть")
+                webpush(
+                    subscription_info=subscription_info,
+                    data=json.dumps(payload),
+                    vapid_private_key=vapid_private_key,
+                    vapid_claims={
+                        "sub": settings.VAPID_SUBJECT
+                    }
+                )
+                logger.info("Успешно отправлено с ключом как есть")
+                return True
+                
+            except Exception as e1:
+                logger.error(f"Попытка 1 неудачна: {e1}")
+                
+                # Попытка 2: декодирование base64 если ключ закодирован
+                try:
+                    logger.info("Попытка 2: Декодирование base64")
+                    if not vapid_private_key.startswith('-----BEGIN'):
+                        # Добавляем padding если нужен
+                        padding = 4 - (len(vapid_private_key) % 4)
+                        if padding != 4:
+                            vapid_private_key += '=' * padding
+                        
+                        decoded_key = base64.urlsafe_b64decode(vapid_private_key.encode('utf-8'))
+                        vapid_private_key = decoded_key.decode('utf-8')
+                        logger.info(f"Декодированный ключ: {vapid_private_key[:100]}...")
                     
-                    decoded_key = base64.urlsafe_b64decode(vapid_private_key.encode('utf-8'))
-                    vapid_private_key = decoded_key.decode('utf-8')
-                    logger.info("VAPID private key успешно декодирован")
-                else:
-                    logger.info("VAPID private key уже в PEM формате")
+                    webpush(
+                        subscription_info=subscription_info,
+                        data=json.dumps(payload),
+                        vapid_private_key=vapid_private_key,
+                        vapid_claims={
+                            "sub": settings.VAPID_SUBJECT
+                        }
+                    )
+                    logger.info("Успешно отправлено с декодированным ключом")
+                    return True
                     
-            except Exception as decode_error:
-                logger.error(f"Ошибка декодирования VAPID private key: {decode_error}")
-                return False
-            
-            logger.info("Отправка push-уведомления через pywebpush")
-            
-            webpush(
-                subscription_info=subscription_info,
-                data=json.dumps(payload),
-                vapid_private_key=vapid_private_key,
-                vapid_claims={
-                    "sub": settings.VAPID_SUBJECT
-                }
-            )
-            return True
+                except Exception as e2:
+                    logger.error(f"Попытка 2 неудачна: {e2}")
+                    
+                    # Попытка 3: альтернативный формат
+                    try:
+                        logger.info("Попытка 3: Использование только PEM части")
+                        # Если ключ содержит extra символы, берем только PEM часть
+                        if '-----BEGIN PRIVATE KEY-----' in vapid_private_key:
+                            start = vapid_private_key.find('-----BEGIN PRIVATE KEY-----')
+                            end = vapid_private_key.find('-----END PRIVATE KEY-----') + len('-----END PRIVATE KEY-----')
+                            clean_key = vapid_private_key[start:end]
+                            logger.info(f"Очищенный ключ: {clean_key}")
+                            
+                            webpush(
+                                subscription_info=subscription_info,
+                                data=json.dumps(payload),
+                                vapid_private_key=clean_key,
+                                vapid_claims={
+                                    "sub": settings.VAPID_SUBJECT
+                                }
+                            )
+                            logger.info("Успешно отправлено с очищенным ключом")
+                            return True
+                    except Exception as e3:
+                        logger.error(f"Попытка 3 неудачна: {e3}")
+                        
+            return False
             
         except WebPushException as e:
             logger.error(f"Ошибка отправки push-уведомления: {e}")
