@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 from sqlalchemy.orm import Session
 
@@ -29,7 +29,8 @@ class BackgroundTaskService:
         """Проверяет и отправляет напоминания о дедлайнах"""
         db = BackgroundTaskService.get_db()
         try:
-            now = datetime.now()
+            # Используем UTC для всех операций со временем
+            now = datetime.now(timezone.utc)
             
             # Напоминания за 1 день
             tomorrow = now + timedelta(days=1)
@@ -57,29 +58,21 @@ class BackgroundTaskService:
             
             sent_count = 0
             
+            # Собираем все задачи в один список, чтобы избежать дублирования
+            tasks_to_notify = list(set(tasks_tomorrow + tasks_one_hour + tasks_thirty_min))
+
             # Отправляем напоминания
-            for task in tasks_tomorrow:
+            for task in tasks_to_notify:
                 if NotificationService.send_deadline_reminder(
                     db, task.user_id, task.title, task.deadline, task.id
                 ):
                     sent_count += 1
             
-            for task in tasks_one_hour:
-                if NotificationService.send_deadline_reminder(
-                    db, task.user_id, task.title, task.deadline, task.id
-                ):
-                    sent_count += 1
-            
-            for task in tasks_thirty_min:
-                if NotificationService.send_deadline_reminder(
-                    db, task.user_id, task.title, task.deadline, task.id
-                ):
-                    sent_count += 1
-            
-            logger.info(f"Отправлено {sent_count} напоминаний о дедлайнах")
+            if sent_count > 0:
+                logger.info(f"Отправлено {sent_count} напоминаний о дедлайнах")
             
         except Exception as e:
-            logger.error(f"Ошибка при отправке напоминаний о дедлайнах: {e}")
+            logger.error(f"Ошибка при отправке напоминаний о дедлайнах: {e}", exc_info=True)
         finally:
             db.close()
     
@@ -88,7 +81,7 @@ class BackgroundTaskService:
         """Проверяет и отправляет уведомления о просроченных задачах"""
         db = BackgroundTaskService.get_db()
         try:
-            now = datetime.now()
+            now = datetime.now(timezone.utc)
             
             # Задачи просроченные на 1 день или более
             overdue_tasks = db.query(Task).filter(
@@ -99,17 +92,23 @@ class BackgroundTaskService:
             sent_count = 0
             
             for task in overdue_tasks:
-                days_overdue = (now - task.deadline).days
+                # Убедимся, что у дедлайна есть таймзона
+                deadline = task.deadline
+                if deadline.tzinfo is None:
+                    deadline = deadline.replace(tzinfo=timezone.utc)
+
+                days_overdue = (now - deadline).days
                 if days_overdue > 0:  # Только если прошел минимум 1 день
                     if NotificationService.send_overdue_reminder(
                         db, task.user_id, task.title, days_overdue, task.id
                     ):
                         sent_count += 1
             
-            logger.info(f"Отправлено {sent_count} напоминаний о просроченных задачах")
+            if sent_count > 0:
+                logger.info(f"Отправлено {sent_count} напоминаний о просроченных задачах")
             
         except Exception as e:
-            logger.error(f"Ошибка при отправке напоминаний о просроченных задачах: {e}")
+            logger.error(f"Ошибка при отправке напоминаний о просроченных задачах: {e}", exc_info=True)
         finally:
             db.close()
     
@@ -121,14 +120,14 @@ class BackgroundTaskService:
             # Получаем всех активных пользователей с push-подписками
             users = db.query(User).filter(
                 User.is_active == True,
-                User.push_subscription.is_not(None)
+                User.push_subscription != None
             ).all()
             
             sent_count = 0
             
             for user in users:
                 # Получаем статистику задач пользователя
-                now = datetime.now()
+                now = datetime.now(timezone.utc)
                 today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
                 today_end = today_start + timedelta(days=1)
                 
@@ -156,10 +155,11 @@ class BackgroundTaskService:
                 ):
                     sent_count += 1
             
-            logger.info(f"Отправлено {sent_count} ежедневных сводок")
+            if sent_count > 0:
+                logger.info(f"Отправлено {sent_count} ежедневных сводок")
             
         except Exception as e:
-            logger.error(f"Ошибка при отправке ежедневных сводок: {e}")
+            logger.error(f"Ошибка при отправке ежедневных сводок: {e}", exc_info=True)
         finally:
             db.close()
     
@@ -179,18 +179,18 @@ class BackgroundTaskService:
                 BackgroundTaskService.check_deadline_reminders()
                 
                 # Проверяем просроченные задачи каждый час
-                current_minute = datetime.now().minute
+                current_minute = datetime.now(timezone.utc).minute
                 if current_minute == 0:  # Каждый час в :00
                     BackgroundTaskService.check_overdue_tasks()
                 
-                # Отправляем ежедневные сводки в 9:00
-                current_time = datetime.now().time()
+                # Отправляем ежедневные сводки в 9:00 UTC
+                current_time = datetime.now(timezone.utc).time()
                 if current_time.hour == 9 and current_time.minute == 0:
                     BackgroundTaskService.send_daily_summaries()
                 
-                # Ждем 15 минут до следующей проверки
-                await asyncio.sleep(15 * 60)
+                # Ждем 1 минуту до следующей проверки
+                await asyncio.sleep(60)
                 
             except Exception as e:
-                logger.error(f"Ошибка в планировщике фоновых задач: {e}")
+                logger.error(f"Ошибка в планировщике фоновых задач: {e}", exc_info=True)
                 await asyncio.sleep(60)  # При ошибке ждем 1 минуту 

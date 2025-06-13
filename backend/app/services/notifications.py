@@ -1,7 +1,7 @@
 import json
 import logging
 import base64
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from pywebpush import webpush, WebPushException
 from sqlalchemy.orm import Session
@@ -136,10 +136,16 @@ class NotificationService:
         task_id: int
     ) -> bool:
         """Отправляет напоминание о дедлайне"""
-        # Вычисляем сколько времени осталось
-        time_left = deadline - datetime.now()
+        # Вычисляем сколько времени осталось, используя UTC
+        if deadline.tzinfo is None:
+            # Если у дедлайна нет таймзоны, считаем его как UTC
+            deadline = deadline.replace(tzinfo=timezone.utc)
+            
+        time_left = deadline - datetime.now(timezone.utc)
         
-        if time_left.days > 0:
+        if time_left.total_seconds() <= 0:
+            time_text = "уже наступил!"
+        elif time_left.days > 0:
             time_text = f"через {time_left.days} дн."
         elif time_left.seconds > 3600:
             hours = time_left.seconds // 3600
@@ -172,8 +178,8 @@ class NotificationService:
     ) -> bool:
         """Отправляет уведомление о просроченной задаче"""
         notification = PushNotification(
-            title="🚨 Просроченная задача!",
-            body=f"{task_title} просрочена на {days_overdue} дн.",
+            title=f"⚠️ Задача просрочена на {days_overdue} дн.",
+            body=f"{task_title} - проверьте статус выполнения",
             icon="/icon-192x192.png",
             url=f"/tasks/{task_id}",
             tag=f"overdue-{task_id}"
@@ -241,8 +247,8 @@ class NotificationService:
     ) -> bool:
         """Отправляет приветственное уведомление"""
         notification = PushNotification(
-            title=f"Добро пожаловать, {user_name}! 🎓",
-            body="Начните планировать свои задачи прямо сейчас!",
+            title=f"👋 Добро пожаловать, {user_name}!",
+            body="Ваш планировщик готов к работе. Создайте первую задачу!",
             icon="/icon-192x192.png",
             url="/tasks/new",
             tag="welcome"
