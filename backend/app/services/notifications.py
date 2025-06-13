@@ -62,9 +62,16 @@ class NotificationService:
                 logger.info("Заменили экранированные \\n на реальные переносы строк")
                 logger.info(f"Обновленный ключ starts with: {repr(vapid_private_key[:50])}")
             
-            # Попытка 4: Использование объекта ключа через cryptography
+            # Проверяем версию pywebpush для диагностики
             try:
-                logger.info("Попытка 4: Создание объекта ключа через cryptography")
+                import pywebpush
+                logger.info(f"pywebpush version: {pywebpush.__version__}")
+            except:
+                logger.info("Не удалось определить версию pywebpush")
+            
+            # Попытка 5: Использование DER формата
+            try:
+                logger.info("Попытка 5: Конвертация в DER формат")
                 
                 # Создаем объект приватного ключа
                 private_key_obj = serialization.load_pem_private_key(
@@ -72,20 +79,63 @@ class NotificationService:
                     password=None
                 )
                 
-                # Пытаемся передать объект ключа
+                # Сериализуем в DER формат
+                der_key = private_key_obj.private_bytes(
+                    encoding=serialization.Encoding.DER,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption()
+                )
+                
+                logger.info(f"DER key length: {len(der_key)}")
+                
+                # Пытаемся передать DER ключ
                 webpush(
                     subscription_info=subscription_info,
                     data=json.dumps(payload),
-                    vapid_private_key=private_key_obj,
+                    vapid_private_key=der_key,
                     vapid_claims={
                         "sub": settings.VAPID_SUBJECT
                     }
                 )
-                logger.info("✅ Успешно отправлено с объектом ключа!")
+                logger.info("✅ Успешно отправлено с DER ключом!")
                 return True
                 
-            except Exception as e4:
-                logger.error(f"Попытка 4 неудачна: {e4}")
+            except Exception as e5:
+                logger.error(f"Попытка 5 неудачна: {e5}")
+            
+            # Попытка 6: Пересериализация PEM ключа
+            try:
+                logger.info("Попытка 6: Пересериализация PEM ключа")
+                
+                # Создаем объект приватного ключа
+                private_key_obj = serialization.load_pem_private_key(
+                    vapid_private_key.encode('utf-8'),
+                    password=None
+                )
+                
+                # Сериализуем обратно в PEM с точными настройками
+                clean_pem = private_key_obj.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption()
+                ).decode('utf-8')
+                
+                logger.info(f"Пересериализованный PEM: {repr(clean_pem[:100])}")
+                
+                # Пытаемся передать пересериализованный PEM
+                webpush(
+                    subscription_info=subscription_info,
+                    data=json.dumps(payload),
+                    vapid_private_key=clean_pem,
+                    vapid_claims={
+                        "sub": settings.VAPID_SUBJECT
+                    }
+                )
+                logger.info("✅ Успешно отправлено с пересериализованным PEM!")
+                return True
+                
+            except Exception as e6:
+                logger.error(f"Попытка 6 неудачна: {e6}")
             
             # Пробуем разные варианты передачи ключа
             try:
