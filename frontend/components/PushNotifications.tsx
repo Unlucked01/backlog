@@ -9,7 +9,7 @@ interface PushNotificationsProps {
 }
 
 // Используем VAPID ключ из переменных окружения, а если не найден
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY as string;
 
 export default function PushNotifications({ className = '' }: PushNotificationsProps) {
   const [isSupported, setIsSupported] = useState(false);
