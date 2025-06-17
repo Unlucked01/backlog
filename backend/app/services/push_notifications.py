@@ -3,6 +3,9 @@ import logging
 import os
 from typing import Optional, Dict, Any
 
+from py_vapid import Vapid
+from py_vapid.utils import b64urldecode
+
 from pywebpush import webpush, WebPushException
 from ..db.session import get_db
 from ..db.models.push_subscription import PushSubscription
