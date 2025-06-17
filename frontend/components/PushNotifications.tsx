@@ -48,6 +48,7 @@ export default function PushNotifications({ className = '' }: PushNotificationsP
       });
       
       console.log('Push service worker registered:', registration);
+      console.log('VAPID_KEY=', VAPID_PUBLIC_KEY)
       
       // Ждем активации
       if (registration.installing) {
