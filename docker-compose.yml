@@ -61,7 +61,7 @@ services:
   frontend:
     build: 
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
       args:
         NEXT_PUBLIC_API_URL: http://localhost:8010
         NEXT_PUBLIC_FRONTEND_URL: http://localhost:3010
