@@ -2,6 +2,7 @@ from typing import List, Any
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ....crud import goal as crud_goal
+from ....crud import achievement as crud_achievement
 from ....db.session import get_db
 from ....schemas.user import User
 from ....schemas.goal import Goal, GoalCreate, GoalUpdate, GoalProgressUpdate
@@ -33,7 +34,12 @@ def create_goal(
     """
     Создать новую цель
     """
-    return crud_goal.create_goal(db, goal, current_user.id)
+    new_goal = crud_goal.create_goal(db, goal, current_user.id)
+    
+    # Проверяем и присваиваем новые достижения
+    crud_achievement.check_and_award_achievements(db, current_user.id)
+    
+    return new_goal
 
 
 @router.get("/{goal_id}", response_model=Goal)
@@ -64,6 +70,11 @@ def update_goal(
     goal = crud_goal.update_goal(db, goal_id, current_user.id, goal_update)
     if not goal:
         raise HTTPException(status_code=404, detail="Цель не найдена")
+    
+    # Проверяем и присваиваем новые достижения если цель выполнена
+    if goal.is_completed:
+        crud_achievement.check_and_award_achievements(db, current_user.id)
+    
     return goal
 
 
@@ -80,6 +91,10 @@ def update_goal_progress(
     goal = crud_goal.update_goal_progress(db, goal_id, current_user.id, progress_update.increment)
     if not goal:
         raise HTTPException(status_code=404, detail="Цель не найдена")
+    
+    # Проверяем и присваиваем новые достижения
+    crud_achievement.check_and_award_achievements(db, current_user.id)
+    
     return goal
 
 

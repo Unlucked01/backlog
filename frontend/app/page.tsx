@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { tokenUtils, authAPI, tasksAPI, type User, type Task, type TaskStats } from '@/lib/api';
+import { tokenUtils, authAPI, tasksAPI, goalsAPI, achievementsAPI, type User, type Task, type TaskStats, type Goal, type UserStats } from '@/lib/api';
 import { dateUtils, taskUtils } from '@/lib/utils';
 import { 
   CalendarDaysIcon,
@@ -48,6 +48,8 @@ export default function Dashboard() {
   const [stats, setStats] = useState<TaskStats | null>(null);
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
   const [overdueTasks, setOverdueTasks] = useState<Task[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -61,17 +63,21 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const [userResponse, statsResponse, upcomingResponse, overdueResponse] = await Promise.all([
+      const [userResponse, statsResponse, upcomingResponse, overdueResponse, goalsResponse, userStatsResponse] = await Promise.all([
         authAPI.getCurrentUser(),
         tasksAPI.getTaskStats(),
         tasksAPI.getUpcomingTasks(7),
         tasksAPI.getOverdueTasks(),
+        goalsAPI.getGoals(),
+        achievementsAPI.getUserStats(),
       ]);
 
       setUser(userResponse);
       setStats(statsResponse);
       setUpcomingTasks(upcomingResponse);
       setOverdueTasks(overdueResponse);
+      setGoals(goalsResponse);
+      setUserStats(userStatsResponse);
     } catch (error) {
       console.error('Ошибка загрузки данных:', error);
     } finally {
@@ -117,11 +123,8 @@ export default function Dashboard() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
-                  <TrophyIcon className="h-6 w-6 text-white" />
+                  <AcademicCapIcon className="h-6 w-6 text-white" />
                 </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Студенческий планировщик
-                </h1>
               </div>
             </div>
             <nav className="flex items-center space-x-1">
@@ -134,8 +137,24 @@ export default function Dashboard() {
                 <span className="hidden sm:block">Задачи</span>
               </Link>
               <Link 
-                href="/calendar" 
+                href="/goals" 
                 className="flex items-center space-x-2 text-gray-600 hover:text-green-600 hover:bg-green-50 px-3 py-2 rounded-lg transition-all duration-200"
+                title="Цели"
+              >
+                <FlagIcon className="h-5 w-5" />
+                <span className="hidden sm:block">Цели</span>
+              </Link>
+              <Link 
+                href="/achievements" 
+                className="flex items-center space-x-2 text-gray-600 hover:text-yellow-600 hover:bg-yellow-50 px-3 py-2 rounded-lg transition-all duration-200"
+                title="Достижения"
+              >
+                <TrophyIconSolid className="h-5 w-5" />
+                <span className="hidden sm:block">Достижения</span>
+              </Link>
+              <Link 
+                href="/calendar" 
+                className="flex items-center space-x-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 px-3 py-2 rounded-lg transition-all duration-200"
                 title="Календарь"
               >
                 <CalendarIcon className="h-5 w-5" />
@@ -143,7 +162,7 @@ export default function Dashboard() {
               </Link>
               <Link 
                 href="/profile" 
-                className="flex items-center space-x-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 px-3 py-2 rounded-lg transition-all duration-200"
+                className="flex items-center space-x-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg transition-all duration-200"
                 title="Профиль"
               >
                 <UserIcon className="h-5 w-5" />
@@ -192,17 +211,33 @@ export default function Dashboard() {
           </Link>
           
           <Link
+            href="/goals"
+            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+          >
+            <FlagIcon className="h-5 w-5" />
+            <span>Мои цели</span>
+          </Link>
+
+          <Link
+            href="/achievements"
+            className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+          >
+            <TrophyIconSolid className="h-5 w-5" />
+            <span>Достижения</span>
+          </Link>
+          
+          <Link
             href="/calendar"
-            className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
+            className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
             <CalendarIcon className="h-5 w-5" />
-            <span>Открыть календарь</span>
+            <span>Календарь</span>
           </Link>
         </div>
 
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
             <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-xl group hover:shadow-2xl transition-all duration-300">
               <div className="absolute top-0 right-0 -mt-6 -mr-6 h-24 w-24 bg-white/10 rounded-full group-hover:scale-110 transition-transform duration-300"></div>
               <div className="relative">
@@ -224,6 +259,18 @@ export default function Dashboard() {
                 </div>
                 <h3 className="font-semibold text-lg">Выполнено</h3>
                 <p className="text-green-100 text-sm">отличная работа!</p>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl group hover:shadow-2xl transition-all duration-300">
+              <div className="absolute top-0 right-0 -mt-6 -mr-6 h-24 w-24 bg-white/10 rounded-full group-hover:scale-110 transition-transform duration-300"></div>
+              <div className="relative">
+                <div className="flex items-center justify-between mb-3">
+                  <FlagIcon className="h-8 w-8 text-purple-100" />
+                  <span className="text-3xl font-bold">{goals.filter(g => g.is_completed).length}</span>
+                </div>
+                <h3 className="font-semibold text-lg">Цели достигнуты</h3>
+                <p className="text-purple-100 text-sm">из {goals.length} целей</p>
               </div>
             </div>
             
@@ -248,6 +295,18 @@ export default function Dashboard() {
                 </div>
                 <h3 className="font-semibold text-lg">Долги</h3>
                 <p className="text-orange-100 text-sm">нужно закрыть</p>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl p-6 text-white shadow-xl group hover:shadow-2xl transition-all duration-300">
+              <div className="absolute top-0 right-0 -mt-6 -mr-6 h-24 w-24 bg-white/10 rounded-full group-hover:scale-110 transition-transform duration-300"></div>
+              <div className="relative">
+                <div className="flex items-center justify-between mb-3">
+                  <TrophyIconSolid className="h-8 w-8 text-yellow-100" />
+                  <span className="text-3xl font-bold">{userStats?.total_points || 0}</span>
+                </div>
+                <h3 className="font-semibold text-lg">Очки опыта</h3>
+                <p className="text-yellow-100 text-sm">{userStats?.achievements_count || 0} достижений</p>
               </div>
             </div>
           </div>

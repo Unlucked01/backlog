@@ -2,6 +2,7 @@ from typing import List, Optional, Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from ....crud import task as crud_task
+from ....crud import achievement as crud_achievement
 from ....db.session import get_db
 from ....schemas.user import User
 from ....schemas.task import Task, TaskCreate, TaskUpdate, TaskFilter, TaskStats, TaskStep
@@ -46,7 +47,12 @@ def create_task(
     """
     Создать новую задачу
     """
-    return crud_task.create_task(db=db, task=task, user_id=current_user.id)
+    new_task = crud_task.create_task(db=db, task=task, user_id=current_user.id)
+    
+    # Проверяем и присваиваем новые достижения
+    crud_achievement.check_and_award_achievements(db, current_user.id)
+    
+    return new_task
 
 
 @router.get("/{task_id}", response_model=Task)
@@ -79,6 +85,11 @@ def update_task(
     )
     if not task:
         raise HTTPException(status_code=404, detail="Задача не найдена")
+    
+    # Проверяем и присваиваем новые достижения если задача выполнена
+    if task_update.status == "completed":
+        crud_achievement.check_and_award_achievements(db, current_user.id)
+    
     return task
 
 
@@ -142,7 +153,11 @@ def complete_task_step(
     """
     Отметить этап задачи как выполненный/невыполненный
     """
-    step = crud_task.update_task_step(db=db, step_id=step_id, is_completed=is_completed)
-    if not step:
+    success = crud_task.complete_task_step(db=db, step_id=step_id, is_completed=is_completed)
+    if not success:
         raise HTTPException(status_code=404, detail="Этап задачи не найден")
+    
+    # Проверяем и присваиваем новые достижения
+    crud_achievement.check_and_award_achievements(db, current_user.id)
+    
     return {"message": "Статус этапа обновлен"} 
