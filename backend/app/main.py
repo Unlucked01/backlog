@@ -45,15 +45,19 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Set all CORS enabled origins
-if settings.BACKEND_CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.BACKEND_CORS_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+origins = [
+    "http://localhost:3000",
+    "http://localhost:3010",
+    "https://unl-backlog.duckdns.org"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(api_router, prefix="/api/v1")
 
@@ -65,8 +69,8 @@ def read_root():
         "version": settings.VERSION,
         "docs": "/docs",
         "features": {
-            "oauth_enabled": False,  # OAuth disabled as per PRD requirements
+            "oauth_enabled": False,
             "push_notifications": bool(settings.VAPID_PRIVATE_KEY),
-            "telegram_bot": False  # Telegram integration disabled as per PRD requirements
+            "telegram_bot": False 
         }
     } 

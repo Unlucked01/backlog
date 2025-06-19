@@ -31,10 +31,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # CORS
-    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:3010", "http://localhost:8010", "https://unl-backlog.duckdns.org"]
     
     # App
-    PROJECT_NAME: str = "Student Planner API"
+    PROJECT_NAME: str = "Backlog API"
     VERSION: str = "1.0.0"
     DEBUG: bool = True
     
@@ -45,20 +45,6 @@ class Settings(BaseSettings):
     
     # Telegram
     TELEGRAM_BOT_TOKEN: Optional[str] = None
-    
-    # OAuth - Google
-    GOOGLE_CLIENT_ID: Optional[str] = None
-    GOOGLE_CLIENT_SECRET: Optional[str] = None
-    GOOGLE_REDIRECT_URI: str = "http://localhost:3000/auth/google/callback"
-    
-    # OAuth - VK
-    VK_CLIENT_ID: Optional[str] = None
-    VK_CLIENT_SECRET: Optional[str] = None
-    VK_REDIRECT_URI: str = "http://localhost:3000/auth/vk/callback"
-    
-    # OAuth - Telegram
-    TELEGRAM_APP_ID: Optional[str] = None
-    TELEGRAM_APP_HASH: Optional[str] = None
     
     # Base URLs
     FRONTEND_URL: str = "http://localhost:3000"
