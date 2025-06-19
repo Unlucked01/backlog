@@ -52,16 +52,11 @@ class PushNotificationService:
                 "data": data or {}
             }
 
-            vapid = Vapid.from_params(
-                private_key=b64urldecode(self.vapid_private_key),
-                public_key=b64urldecode(self.vapid_public_key),
-                subject=self.vapid_subject
-            )
-
             response = webpush(
                 subscription_info=subscription_info,
                 data=json.dumps(payload),
-                vapid=vapid,
+                vapid_private_key=self.vapid_private_key,
+                vapid_claims={"sub": self.vapid_subject}
             )
 
             logger.info("✅ Push-уведомление успешно отправлено")
@@ -73,7 +68,7 @@ class PushNotificationService:
         except Exception as e:
             logger.error(f"❌ Общая ошибка при отправке уведомления: {e}", exc_info=True)
             return False
-
+    
     async def send_test_notification(self, user_id: int) -> bool:
         return await self.send_notification(
             user_id=user_id,
